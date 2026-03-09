@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import outputs from "@/amplify_outputs.json";
 
 const apiUrl = (outputs as any).custom?.apiUrl;
-const client = generateClient<Schema>();
+const client = generateClient<Schema>({ authMode: "apiKey" });
 
 interface ProcessingStatusProps {
   jobId: string;

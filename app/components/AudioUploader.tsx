@@ -17,7 +17,7 @@ import {
 import outputs from "@/amplify_outputs.json";
 
 const apiUrl = (outputs as any).custom?.apiUrl;
-const client = generateClient<Schema>();
+const client = generateClient<Schema>({ authMode: "apiKey" });
 
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
