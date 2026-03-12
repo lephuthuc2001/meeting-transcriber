@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { uploadData } from "aws-amplify/storage";
+import { uploadData, type UploadDataWithPathOutput } from "aws-amplify/storage";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { Upload, FileAudio } from "lucide-react";
@@ -45,7 +45,7 @@ export default function AudioUploader({
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadTaskRef = useRef<ReturnType<typeof uploadData> | null>(null);
+  const uploadTaskRef = useRef<UploadDataWithPathOutput | null>(null);
 
   const handleUpload = useCallback(
     async (file: File) => {
