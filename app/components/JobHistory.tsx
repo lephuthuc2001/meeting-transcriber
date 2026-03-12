@@ -61,6 +61,8 @@ export default function JobHistory({
   const [jobs, setJobs] = useState<Array<Schema["MeetingJob"]["type"]>>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -95,6 +97,17 @@ export default function JobHistory({
 
   const handleViewReport = async (jobId: string) => {
     onViewReport(jobId);
+  };
+
+  const handleTitleSave = async (jobId: string) => {
+    const trimmed = editingTitle.trim();
+    if (trimmed) {
+      await client.models.MeetingJob.update({ id: jobId, title: trimmed });
+      setJobs((prev) =>
+        prev.map((j) => (j.id === jobId ? { ...j, title: trimmed } : j))
+      );
+    }
+    setEditingId(null);
   };
 
   const filteredJobs = jobs.filter((job) => {
@@ -162,8 +175,31 @@ export default function JobHistory({
                 const status = (job.status as JobStatus) || "UPLOADING";
                 return (
                   <TableRow key={job.id}>
-                    <TableCell className="font-medium max-w-[200px] truncate">
-                      {job.title || "Không có tiêu đề"}
+                    <TableCell className="font-medium max-w-[200px]">
+                      {editingId === job.id ? (
+                        <Input
+                          autoFocus
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onBlur={() => handleTitleSave(job.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleTitleSave(job.id);
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          className="h-7 text-sm"
+                        />
+                      ) : (
+                        <span
+                          className="cursor-pointer hover:underline truncate block"
+                          title="Nhấp để đổi tên"
+                          onClick={() => {
+                            setEditingId(job.id);
+                            setEditingTitle(job.title ?? "");
+                          }}
+                        >
+                          {job.title || "Không có tiêu đề"}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="max-w-[150px] truncate text-muted-foreground">
                       {job.fileName}
