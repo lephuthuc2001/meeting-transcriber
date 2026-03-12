@@ -37,6 +37,15 @@ export default function AudioUploader({
 
   const handleUpload = useCallback(
     async (file: File) => {
+      // Check if storage is properly configured (requires npx ampx sandbox to run first)
+      const storageBucket = (outputs as any).storage?.bucket_name;
+      if (!storageBucket) {
+        setError(
+          "Chưa kết nối với máy chủ lưu trữ. Vui lòng chạy 'npx ampx sandbox' trước khi sử dụng."
+        );
+        return;
+      }
+
       setUploading(true);
       setProgress(0);
       setError(null);
