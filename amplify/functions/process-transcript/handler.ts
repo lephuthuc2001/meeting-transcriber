@@ -1,5 +1,9 @@
 import type { APIGatewayProxyHandler } from "aws-lambda";
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  GetObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client();
 const BUCKET_NAME = process.env.BUCKET_NAME!;
@@ -17,7 +21,7 @@ Hãy tạo một biên bản cuộc họp với các phần sau:
 1. Tóm tắt cuộc họp (2-3 câu tổng quan)
 2. Các nội dung chính đã thảo luận (danh sách bullet points)
 3. Quyết định đã đưa ra (nếu có)
-4. Công việc cần thực hiện - Action Items (ai làm gì, deadline nếu được đề cập)
+4. Công việc cần thực hiện (ai làm gì, deadline nếu được đề cập)
 5. Ghi chú khác
 
 QUAN TRỌNG: Sử dụng HTML đơn giản với các thẻ h1, h2, p, ul, li.
@@ -51,7 +55,7 @@ async function callClaude(transcript: string): Promise<string> {
     throw new Error(`Claude API error ${response.status}: ${err}`);
   }
 
-  const data = await response.json() as any;
+  const data = (await response.json()) as any;
   return data.content?.[0]?.text ?? "";
 }
 
@@ -77,7 +81,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       new GetObjectCommand({
         Bucket: BUCKET_NAME,
         Key: `transcripts/${jobId}.json`,
-      })
+      }),
     );
     const transcriptRaw = await transcriptObj.Body?.transformToString();
     if (!transcriptRaw) {
@@ -102,7 +106,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         Key: `reports/${jobId}.html`,
         Body: reportContent,
         ContentType: "text/html; charset=utf-8",
-      })
+      }),
     );
 
     return {

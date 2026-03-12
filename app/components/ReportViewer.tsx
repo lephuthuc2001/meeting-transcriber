@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Download, Printer, CheckCircle } from "lucide-react";
+import { Copy, Download, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,49 +37,29 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
     }
   };
 
-  const handleDownload = () => {
-    const fullHtml = `<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biên Bản Cuộc Họp</title>
-</head>
-<body>
-${report}
-</body>
-</html>`;
-    const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+  const handleDownloadDoc = () => {
+    const wordContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+    xmlns:w='urn:schemas-microsoft-com:office:word'
+    xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset='utf-8'>
+      <title>Biên Bản Cuộc Họp</title>
+      <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 2cm; }
+      </style>
+    </head>
+    <body>${report}</body>
+  </html>`;
+    const blob = new Blob(["\ufeff", wordContent], { type: "application/msword" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `bien-ban-cuoc-hop-${new Date().toISOString().slice(0, 10)}.html`;
+    a.download = `bien-ban-cuoc-hop-${new Date().toISOString().slice(0, 10)}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const handlePrint = () => {
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(`<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<title>Biên Bản Cuộc Họp</title>
-<style>
-  body { font-family: 'Times New Roman', serif; padding: 2rem; }
-  @media print { body { padding: 0; } }
-</style>
-</head>
-<body>
-${report}
-<script>window.onload = function() { window.print(); }</script>
-</body>
-</html>`);
-      printWindow.document.close();
-    }
   };
 
   return (
@@ -111,13 +91,9 @@ ${report}
             <Copy className="size-4 mr-2" />
             Sao chép nội dung
           </Button>
-          <Button variant="outline" onClick={handleDownload}>
+          <Button variant="outline" onClick={handleDownloadDoc}>
             <Download className="size-4 mr-2" />
-            Tải biên bản
-          </Button>
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="size-4 mr-2" />
-            In / Lưu PDF
+            Tải Word (.doc)
           </Button>
           <Button onClick={onClose}>Đóng</Button>
         </DialogFooter>
