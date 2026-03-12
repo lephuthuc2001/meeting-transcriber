@@ -14,13 +14,15 @@ type Phase = "idle" | "uploading" | "transcribing" | "processing" | "done";
 
 export default function Home() {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [currentAudioKey, setCurrentAudioKey] = useState<string | null>(null);
   const [currentPhase, setCurrentPhase] = useState<Phase>("idle");
   const [currentReport, setCurrentReport] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [audioDuration, setAudioDuration] = useState<number>(0);
 
-  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number) => {
+  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number, audioKey: string) => {
     setCurrentJobId(jobId);
+    setCurrentAudioKey(audioKey);
     setAudioDuration(audioDurationSeconds);
     setCurrentPhase("transcribing");
     setRefreshKey((prev) => prev + 1);
@@ -38,10 +40,18 @@ export default function Home() {
     setRefreshKey((prev) => prev + 1);
   }, []);
 
+  const handleCancel = useCallback(() => {
+    setCurrentPhase("idle");
+    setCurrentJobId(null);
+    setCurrentAudioKey(null);
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
   const handleCloseReport = useCallback(() => {
     setCurrentReport(null);
     setCurrentPhase("idle");
     setCurrentJobId(null);
+    setCurrentAudioKey(null);
   }, []);
 
   const handleViewReport = useCallback(async (jobId: string) => {
@@ -84,13 +94,16 @@ export default function Home() {
 
         {/* Processing Status */}
         {currentJobId &&
+          currentAudioKey &&
           (currentPhase === "transcribing" ||
             currentPhase === "processing") && (
             <ProcessingStatus
               jobId={currentJobId}
+              audioKey={currentAudioKey}
               audioDurationSeconds={audioDuration}
               onComplete={handleProcessingComplete}
               onError={handleProcessingError}
+              onCancel={handleCancel}
             />
           )}
 

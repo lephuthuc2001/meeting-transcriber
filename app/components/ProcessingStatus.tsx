@@ -5,6 +5,7 @@ import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import outputs from "@/amplify_outputs.json";
 
 const apiUrl = (outputs as any).custom?.apiUrl;
@@ -12,9 +13,11 @@ const client = generateClient<Schema>({ authMode: "apiKey" });
 
 interface ProcessingStatusProps {
   jobId: string;
+  audioKey: string;
   audioDurationSeconds: number;
   onComplete: (report: string) => void;
   onError: (error: string) => void;
+  onCancel: () => void;
 }
 
 type Phase =
@@ -39,16 +42,35 @@ const formatTime = (seconds: number) => {
 
 export default function ProcessingStatus({
   jobId,
+  audioKey,
   audioDurationSeconds,
   onComplete,
   onError,
+  onCancel,
 }: ProcessingStatusProps) {
   const [phase, setPhase] = useState<Phase>("transcribing");
   const [errorMessage, setErrorMessage] = useState("");
   const [elapsed, setElapsed] = useState(0);
+  const [cancelling, setCancelling] = useState(false);
   const hasTriggeredProcess = useRef(false);
   const hasCompleted = useRef(false);
   const phaseStartRef = useRef<number>(Date.now());
+
+  const handleCancel = async () => {
+    if (!confirm("Bạn có chắc muốn hủy quá trình xử lý không?")) return;
+    setCancelling(true);
+    try {
+      await fetch(`${apiUrl}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, audioKey }),
+      });
+      await client.models.MeetingJob.delete({ id: jobId });
+    } catch {
+      // Best-effort cleanup — proceed regardless
+    }
+    onCancel();
+  };
 
   useEffect(() => {
     phaseStartRef.current = Date.now();
@@ -196,6 +218,16 @@ export default function ProcessingStatus({
                 Đã xử lý: {formatTime(elapsed)}
               </p>
             )}
+            <div className="flex justify-center pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? "Đang hủy..." : "Hủy"}
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

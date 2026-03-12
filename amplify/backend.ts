@@ -8,6 +8,7 @@ import { storage } from "./storage/resource.js";
 import { startTranscription } from "./functions/start-transcription/resource.js";
 import { checkStatus } from "./functions/check-status/resource.js";
 import { processTranscript } from "./functions/process-transcript/resource.js";
+import { cancelJob } from "./functions/cancel-job/resource.js";
 
 const backend = defineBackend({
   auth,
@@ -16,6 +17,7 @@ const backend = defineBackend({
   startTranscription,
   checkStatus,
   processTranscript,
+  cancelJob,
 });
 
 // Get the S3 bucket reference from storage
@@ -27,6 +29,7 @@ const lambdaResources = [
   backend.startTranscription.resources.lambda,
   backend.checkStatus.resources.lambda,
   backend.processTranscript.resources.lambda,
+  backend.cancelJob.resources.lambda,
 ];
 
 for (const lambdaFn of lambdaResources) {
@@ -60,6 +63,18 @@ backend.checkStatus.resources.lambda.role?.attachInlinePolicy(
       new PolicyStatement({
         effect: Effect.ALLOW,
         actions: ["transcribe:GetTranscriptionJob"],
+        resources: ["*"],
+      }),
+    ],
+  })
+);
+
+backend.cancelJob.resources.lambda.role?.attachInlinePolicy(
+  new Policy(backend.cancelJob.resources.lambda, "TranscribeCancelPolicy", {
+    statements: [
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["transcribe:DeleteTranscriptionJob"],
         resources: ["*"],
       }),
     ],
@@ -104,6 +119,13 @@ processResource.addMethod(
   new apigateway.LambdaIntegration(
     backend.processTranscript.resources.lambda
   )
+);
+
+// POST /cancel -> cancelJob lambda
+const cancelResource = api.root.addResource("cancel");
+cancelResource.addMethod(
+  "POST",
+  new apigateway.LambdaIntegration(backend.cancelJob.resources.lambda)
 );
 
 // Output the API URL

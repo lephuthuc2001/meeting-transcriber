@@ -22,7 +22,7 @@ const client = generateClient<Schema>({ authMode: "apiKey" });
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
 interface AudioUploaderProps {
-  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number) => void;
+  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string) => void;
 }
 
 const getAudioDuration = (file: File): Promise<number> =>
@@ -45,6 +45,7 @@ export default function AudioUploader({
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTaskRef = useRef<ReturnType<typeof uploadData> | null>(null);
 
   const handleUpload = useCallback(
     async (file: File) => {
@@ -65,7 +66,7 @@ export default function AudioUploader({
       const audioDurationSeconds = await getAudioDuration(file);
 
       try {
-        await uploadData({
+        const task = uploadData({
           path: s3Key,
           data: file,
           options: {
@@ -75,7 +76,9 @@ export default function AudioUploader({
               }
             },
           },
-        }).result;
+        });
+        uploadTaskRef.current = task;
+        await task.result;
 
         const response = await fetch(`${apiUrl}/transcribe`, {
           method: "POST",
@@ -103,7 +106,7 @@ export default function AudioUploader({
           audioDurationSeconds,
         });
 
-        onTranscriptionStarted(data.jobId, audioDurationSeconds);
+        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key);
         setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");
@@ -117,6 +120,17 @@ export default function AudioUploader({
     },
     [title, onTranscriptionStarted]
   );
+
+  const handleCancel = () => {
+    uploadTaskRef.current?.cancel();
+    uploadTaskRef.current = null;
+    setUploading(false);
+    setProgress(0);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,11 +187,11 @@ export default function AudioUploader({
             isDragOver
               ? "border-primary bg-primary/5"
               : "border-muted-foreground/25 hover:border-primary/50"
-          } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+          } ${uploading ? "opacity-80" : ""}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !uploading && fileInputRef.current?.click()}
         >
           <input
             ref={fileInputRef}
@@ -199,6 +213,17 @@ export default function AudioUploader({
                 />
               </div>
               <p className="text-xs text-muted-foreground">{progress}%</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancel();
+                }}
+                className="mt-1"
+              >
+                Hủy
+              </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
