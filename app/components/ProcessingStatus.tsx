@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import outputs from "@/amplify_outputs.json";
 
@@ -12,6 +12,7 @@ const client = generateClient<Schema>({ authMode: "apiKey" });
 
 interface ProcessingStatusProps {
   jobId: string;
+  audioDurationSeconds: number;
   onComplete: (report: string) => void;
   onError: (error: string) => void;
 }
@@ -29,15 +30,34 @@ const PHASE_MESSAGES: Record<Phase, string> = {
   failed: "Đã xảy ra lỗi.",
 };
 
+const formatTime = (seconds: number) => {
+  if (seconds < 60) return `${seconds} giây`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m} phút ${s} giây` : `${m} phút`;
+};
+
 export default function ProcessingStatus({
   jobId,
+  audioDurationSeconds,
   onComplete,
   onError,
 }: ProcessingStatusProps) {
   const [phase, setPhase] = useState<Phase>("transcribing");
   const [errorMessage, setErrorMessage] = useState("");
+  const [elapsed, setElapsed] = useState(0);
   const hasTriggeredProcess = useRef(false);
   const hasCompleted = useRef(false);
+  const phaseStartRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    phaseStartRef.current = Date.now();
+    setElapsed(0);
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - phaseStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [phase]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -123,6 +143,14 @@ export default function ProcessingStatus({
     return () => clearInterval(intervalId);
   }, [jobId, onComplete, onError]);
 
+  const transcribeProgress =
+    audioDurationSeconds > 0
+      ? Math.min(Math.round((elapsed / audioDurationSeconds) * 100), 95)
+      : null;
+
+  const remaining =
+    audioDurationSeconds > 0 ? Math.max(audioDurationSeconds - elapsed, 0) : null;
+
   return (
     <Card className="border-primary/20 bg-primary/5">
       <CardContent className="flex flex-col items-center gap-4 py-8">
@@ -141,13 +169,34 @@ export default function ProcessingStatus({
             </p>
           </>
         ) : (
-          <>
-            <Loader2 className="size-10 text-primary animate-spin" />
-            <p className="text-sm font-medium">{PHASE_MESSAGES[phase]}</p>
-            <p className="text-xs text-muted-foreground">
-              Quá trình này có thể mất vài phút...
-            </p>
-          </>
+          <div className="w-full space-y-2">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{PHASE_MESSAGES[phase]}</span>
+              {phase === "transcribing" && transcribeProgress !== null && (
+                <span>{transcribeProgress}%</span>
+              )}
+            </div>
+            <div className="w-full bg-muted rounded-full h-2.5">
+              {phase === "transcribing" && transcribeProgress !== null ? (
+                <div
+                  className="bg-primary h-2.5 rounded-full transition-all duration-1000"
+                  style={{ width: `${transcribeProgress}%` }}
+                />
+              ) : (
+                <div className="bg-primary h-2.5 rounded-full animate-pulse w-3/4" />
+              )}
+            </div>
+            {phase === "transcribing" && remaining !== null && (
+              <p className="text-xs text-muted-foreground text-right">
+                Còn khoảng {formatTime(remaining)}
+              </p>
+            )}
+            {phase === "processing" && (
+              <p className="text-xs text-muted-foreground text-right">
+                Đã xử lý: {formatTime(elapsed)}
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

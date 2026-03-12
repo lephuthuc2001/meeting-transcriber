@@ -22,8 +22,19 @@ const client = generateClient<Schema>({ authMode: "apiKey" });
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
 interface AudioUploaderProps {
-  onTranscriptionStarted: (jobId: string) => void;
+  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number) => void;
 }
+
+const getAudioDuration = (file: File): Promise<number> =>
+  new Promise((resolve) => {
+    const audio = new Audio();
+    audio.src = URL.createObjectURL(file);
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(audio.src);
+      resolve(Math.round(audio.duration));
+    };
+    audio.onerror = () => resolve(0);
+  });
 
 export default function AudioUploader({
   onTranscriptionStarted,
@@ -51,6 +62,7 @@ export default function AudioUploader({
       setError(null);
 
       const s3Key = `audio/${Date.now()}-${file.name}`;
+      const audioDurationSeconds = await getAudioDuration(file);
 
       try {
         await uploadData({
@@ -88,9 +100,10 @@ export default function AudioUploader({
           status: "TRANSCRIBING",
           audioKey: s3Key,
           fileName: file.name,
+          audioDurationSeconds,
         });
 
-        onTranscriptionStarted(data.jobId);
+        onTranscriptionStarted(data.jobId, audioDurationSeconds);
         setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");

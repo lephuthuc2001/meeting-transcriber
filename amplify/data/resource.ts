@@ -15,6 +15,7 @@ const schema = a.schema({
       reportKey: a.string(),
       fileName: a.string().required(),
       errorMessage: a.string(),
+      audioDurationSeconds: a.integer(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 });

@@ -17,9 +17,11 @@ export default function Home() {
   const [currentPhase, setCurrentPhase] = useState<Phase>("idle");
   const [currentReport, setCurrentReport] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
 
-  const handleTranscriptionStarted = useCallback((jobId: string) => {
+  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number) => {
     setCurrentJobId(jobId);
+    setAudioDuration(audioDurationSeconds);
     setCurrentPhase("transcribing");
     setRefreshKey((prev) => prev + 1);
   }, []);
@@ -86,6 +88,7 @@ export default function Home() {
             currentPhase === "processing") && (
             <ProcessingStatus
               jobId={currentJobId}
+              audioDurationSeconds={audioDuration}
               onComplete={handleProcessingComplete}
               onError={handleProcessingError}
             />
