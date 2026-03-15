@@ -21,20 +21,9 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    try {
-      const blob = new Blob([report], { type: "text/html" });
-      const clipboardItem = new ClipboardItem({ "text/html": blob });
-      await navigator.clipboard.write([clipboardItem]);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
-    } catch {
-      // Fallback to plain text copy
-      const tempEl = document.createElement("div");
-      tempEl.innerHTML = report;
-      await navigator.clipboard.writeText(tempEl.textContent || "");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
-    }
+    await navigator.clipboard.writeText(report);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   const handleDownloadDoc = () => {
@@ -46,10 +35,10 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
       <title>Biên Bản Cuộc Họp</title>
       <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
       <style>
-        body { font-family: 'Times New Roman', serif; margin: 2cm; }
+        body { font-family: 'Courier New', monospace; margin: 2cm; white-space: pre-wrap; }
       </style>
     </head>
-    <body>${report}</body>
+    <body><pre>${report}</pre></body>
   </html>`;
     const blob = new Blob(["\ufeff", wordContent], { type: "application/msword" });
     const url = URL.createObjectURL(blob);
@@ -73,10 +62,7 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto rounded-md border bg-white p-6">
-          <div
-            className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: report }}
-          />
+          <pre className="text-sm font-mono whitespace-pre-wrap break-words">{report}</pre>
         </div>
 
         {copied && (

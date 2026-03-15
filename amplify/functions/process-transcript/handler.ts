@@ -14,22 +14,87 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
-const SYSTEM_PROMPT = `Bạn là trợ lý tạo biên bản cuộc họp chuyên nghiệp.
-Dưới đây là bản ghi chép tự động từ một cuộc họp bằng tiếng Việt.
-Hãy tạo một biên bản cuộc họp với các phần sau:
+const SYSTEM_PROMPT_VI = `Bạn là trợ lý tạo biên bản cuộc họp chuyên nghiệp.
+Dưới đây là bản ghi chép tự động từ một cuộc họp.
 
-1. Tóm tắt cuộc họp (2-3 câu tổng quan)
-2. Các nội dung chính đã thảo luận (danh sách bullet points)
-3. Quyết định đã đưa ra (nếu có)
-4. Công việc cần thực hiện (ai làm gì, deadline nếu được đề cập)
-5. Ghi chú khác
+Hãy tạo biên bản theo định dạng sau (plain text, KHÔNG dùng HTML hay Markdown):
 
-QUAN TRỌNG: Sử dụng HTML đơn giản với các thẻ h1, h2, p, ul, li.
-KHÔNG dùng CSS phức tạp hoặc class - chỉ dùng inline style cơ bản nếu cần.
-Điều này để nội dung có thể copy-paste vào Microsoft Word mà vẫn giữ định dạng.
-Giữ nguyên tiếng Việt. Đảm bảo nội dung chính xác theo bản ghi chép.`;
+[TÊN CUỘC HỌP - suy ra từ nội dung]
+================================
+THÔNG TIN CUỘC HỌP
+-------------------
+- Loại họp: [suy ra từ nội dung]
+- Thời gian: [nếu được đề cập]
+- Nội dung chính: [số phần]
 
-async function callClaude(transcript: string): Promise<string> {
+[PHẦN 1: TÊN PHẦN - THEO CHƯƠNG TRÌNH THỰC TẾ]
+-----------------------------------------------
+[Dùng số thứ tự cho các mục chính]
+1. [Mục chính]:
+   - [Chi tiết]
+     + [Chi tiết nhỏ hơn nếu cần]
+
+[PHẦN 2: ...] (tiếp tục theo chương trình thực tế của cuộc họp)
+
+Ý KIẾN THẢO LUẬN
+-----------------
+- [Các ý kiến từ người tham dự]
+
+KẾT LUẬN / LƯU Ý KHÁC
+-----------------------
+[Các kết luận và lưu ý]
+
+QUAN TRỌNG:
+- Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt.
+- Đặt tên phần theo CHƯƠNG TRÌNH THỰC TẾ của cuộc họp (không theo mẫu cứng).
+- Trích xuất đầy đủ: số tiền, tên người, ngày tháng, số liệu cụ thể.
+- Tiêu đề phần dùng CHỮ HOA.
+- Giữ nguyên tiếng Việt. Đảm bảo nội dung chính xác theo bản ghi chép.`;
+
+const SYSTEM_PROMPT_EN = `You are a professional meeting minutes assistant.
+Below is an automatically transcribed recording from a meeting.
+
+Create meeting minutes in the following format (plain text, NO HTML or Markdown):
+
+[MEETING NAME - inferred from content]
+================================
+MEETING INFORMATION
+-------------------
+- Meeting type: [inferred from content]
+- Date/Time: [if mentioned]
+- Main sections: [number of sections]
+
+[SECTION 1: SECTION NAME - BASED ON ACTUAL AGENDA]
+-----------------------------------------------
+[Use numbered items for main points]
+1. [Main item]:
+   - [Detail]
+     + [Sub-detail if needed]
+
+[SECTION 2: ...] (continue following the actual meeting agenda)
+
+DISCUSSION POINTS
+-----------------
+- [Points raised by participants]
+
+CONCLUSIONS / OTHER NOTES
+-----------------------
+[Conclusions and notes]
+
+IMPORTANT:
+- Use plain text only. NO HTML, Markdown, or special characters.
+- Name sections according to the ACTUAL AGENDA of the meeting (not a fixed template).
+- Extract fully: amounts, names, dates, specific figures.
+- Section headings in ALL CAPS.
+- Keep content accurate to the transcript.`;
+
+async function callClaude(transcript: string, language = "vi-VN"): Promise<string> {
+  const isEnglish = language === "en-US";
+  const systemPrompt = isEnglish ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_VI;
+  const userMessage = isEnglish
+    ? `Here is the meeting transcript:\n\n${transcript}`
+    : `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
+
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -40,11 +105,11 @@ async function callClaude(transcript: string): Promise<string> {
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         {
           role: "user",
-          content: `Đây là bản ghi chép cuộc họp:\n\n${transcript}`,
+          content: userMessage,
         },
       ],
     }),
@@ -66,7 +131,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { jobId } = body;
+    const { jobId, language = "vi-VN" } = body;
 
     if (!jobId) {
       return {
@@ -97,15 +162,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       transcriptData.results?.transcripts?.[0]?.transcript ?? "";
 
     // Call Claude API via fetch (no SDK needed)
-    const reportContent = await callClaude(transcriptText);
+    const reportContent = await callClaude(transcriptText, language);
 
     // Save report to S3
     await s3Client.send(
       new PutObjectCommand({
         Bucket: BUCKET_NAME,
-        Key: `reports/${jobId}.html`,
+        Key: `reports/${jobId}.txt`,
         Body: reportContent,
-        ContentType: "text/html; charset=utf-8",
+        ContentType: "text/plain; charset=utf-8",
       }),
     );
 

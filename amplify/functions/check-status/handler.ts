@@ -51,7 +51,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         const reportObj = await s3Client.send(
           new GetObjectCommand({
             Bucket: BUCKET_NAME,
-            Key: `reports/${jobId}.html`,
+            Key: `reports/${jobId}.txt`,
           })
         );
         report = await reportObj.Body?.transformToString();

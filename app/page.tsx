@@ -19,11 +19,13 @@ export default function Home() {
   const [currentReport, setCurrentReport] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [audioDuration, setAudioDuration] = useState<number>(0);
+  const [currentLanguage, setCurrentLanguage] = useState<"vi-VN" | "en-US">("vi-VN");
 
-  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number, audioKey: string) => {
+  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number, audioKey: string, language: "vi-VN" | "en-US") => {
     setCurrentJobId(jobId);
     setCurrentAudioKey(audioKey);
     setAudioDuration(audioDurationSeconds);
+    setCurrentLanguage(language);
     setCurrentPhase("transcribing");
     setRefreshKey((prev) => prev + 1);
   }, []);
@@ -101,6 +103,7 @@ export default function Home() {
               jobId={currentJobId}
               audioKey={currentAudioKey}
               audioDurationSeconds={audioDuration}
+              language={currentLanguage}
               onComplete={handleProcessingComplete}
               onError={handleProcessingError}
               onCancel={handleCancel}

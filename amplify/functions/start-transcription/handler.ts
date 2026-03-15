@@ -42,7 +42,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { s3Key, title, fileName } = body;
+    const { s3Key, title, fileName, language = "vi-VN" } = body;
 
     if (!s3Key || !title || !fileName) {
       return {
@@ -59,7 +59,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     await transcribeClient.send(
       new StartTranscriptionJobCommand({
         TranscriptionJobName: jobId,
-        LanguageCode: "vi-VN",
+        LanguageCode: language === "en-US" ? "en-US" : "vi-VN",
         MediaFormat: getMediaFormat(fileName),
         Media: {
           MediaFileUri: `s3://${BUCKET_NAME}/${s3Key}`,
