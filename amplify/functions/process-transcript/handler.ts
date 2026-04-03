@@ -14,7 +14,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
-const SYSTEM_PROMPT = `Bạn là trợ lý soạn thảo Nghị quyết Chi bộ chuyên nghiệp.
+const SYSTEM_PROMPT = `Bạn là thư ký ghi biên bản Nghị quyết Chi bộ chuyên nghiệp.
 Dưới đây là bản ghi chép tự động từ buổi sinh hoạt Chi bộ.
 
 Hãy soạn thảo Nghị quyết Chi bộ theo đúng định dạng sau (plain text, KHÔNG dùng HTML hay Markdown):
@@ -24,24 +24,24 @@ Chi bộ tháng [tháng/năm - suy ra từ nội dung]
 
 I. Đánh giá tình hình thực hiện nhiệm vụ tháng [tháng]
 1. Lãnh đạo công tác chính trị, tư tưởng
-[Tóm tắt nội dung từ bản ghi chép]
+[Ghi lại ĐẦY ĐỦ toàn bộ nội dung được đề cập]
 
 2. Lãnh đạo thực hiện nhiệm vụ chính trị
-[Tóm tắt nội dung từ bản ghi chép]
+[Ghi lại ĐẦY ĐỦ toàn bộ nội dung được đề cập]
 
 3. Về công tác xây dựng Đảng
-[Tóm tắt nội dung từ bản ghi chép]
+[Ghi lại ĐẦY ĐỦ toàn bộ nội dung được đề cập]
 
 4. Đánh giá chung
-Ưu điểm: [liệt kê từ bản ghi chép]
-Hạn chế: [liệt kê từ bản ghi chép, nếu có]
+Ưu điểm: [Liệt kê ĐẦY ĐỦ từng ưu điểm được nêu]
+Hạn chế: [Liệt kê ĐẦY ĐỦ từng hạn chế được nêu, nếu có]
 
 II. Phương hướng nhiệm vụ tháng [tháng tiếp theo]
 1. Lãnh đạo thực hiện nhiệm vụ chính trị
-[Tóm tắt nội dung từ bản ghi chép]
+[Ghi lại ĐẦY ĐỦ toàn bộ nội dung được đề cập]
 
 2. Về công tác xây dựng Đảng
-[Tóm tắt nội dung từ bản ghi chép]
+[Ghi lại ĐẦY ĐỦ toàn bộ nội dung được đề cập]
 
 * Đảng viên chi bộ biểu quyết thống nhất thông qua Nghị quyết nhiệm vụ tháng [tháng] đạt 100%.
 
@@ -50,9 +50,11 @@ Qua sinh hoạt chi bộ tháng [tháng]/[năm], Chi bộ thống nhất chấm 
 
 QUAN TRỌNG:
 - Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt.
-- Điền đầy đủ thông tin từ bản ghi chép: số liệu, tên người, ngày tháng, điểm số nếu được đề cập.
+- TUYỆT ĐỐI KHÔNG tóm tắt, rút gọn, hay lược bỏ bất kỳ thông tin nào.
+- Ghi lại ĐẦY ĐỦ, CHI TIẾT mọi nội dung, ý kiến, số liệu, tên người, ngày tháng được đề cập trong bản ghi chép.
+- Mỗi ý kiến của từng người phát biểu đều phải được ghi lại.
 - Nếu thông tin nào không có trong bản ghi chép, ghi "[không đề cập]".
-- Giữ nguyên tiếng Việt. Đảm bảo nội dung chính xác theo bản ghi chép.`;
+- Giữ nguyên tiếng Việt.`;
 
 async function callClaude(transcript: string): Promise<string> {
   const userMessage = `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
@@ -66,7 +68,7 @@ async function callClaude(transcript: string): Promise<string> {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [
         {
