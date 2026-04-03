@@ -8,6 +8,7 @@ import { storage } from "./storage/resource.js";
 import { startTranscription } from "./functions/start-transcription/resource.js";
 import { checkStatus } from "./functions/check-status/resource.js";
 import { processTranscript } from "./functions/process-transcript/resource.js";
+import { processTranscriptWorker } from "./functions/process-transcript-worker/resource.js";
 import { cancelJob } from "./functions/cancel-job/resource.js";
 
 const backend = defineBackend({
@@ -17,6 +18,7 @@ const backend = defineBackend({
   startTranscription,
   checkStatus,
   processTranscript,
+  processTranscriptWorker,
   cancelJob,
 });
 
@@ -29,6 +31,7 @@ const lambdaResources = [
   backend.startTranscription.resources.lambda,
   backend.checkStatus.resources.lambda,
   backend.processTranscript.resources.lambda,
+  backend.processTranscriptWorker.resources.lambda,
   backend.cancelJob.resources.lambda,
 ];
 
@@ -126,6 +129,17 @@ const cancelResource = api.root.addResource("cancel");
 cancelResource.addMethod(
   "POST",
   new apigateway.LambdaIntegration(backend.cancelJob.resources.lambda)
+);
+
+// Allow process-transcript to invoke the worker asynchronously
+backend.processTranscriptWorker.resources.lambda.grantInvoke(
+  backend.processTranscript.resources.lambda
+);
+
+// Inject worker function name into the dispatcher Lambda
+(backend.processTranscript.resources.lambda as LambdaFunction).addEnvironment(
+  "WORKER_FUNCTION_NAME",
+  (backend.processTranscriptWorker.resources.lambda as LambdaFunction).functionName
 );
 
 // Output the API URL

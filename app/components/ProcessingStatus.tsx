@@ -134,20 +134,8 @@ export default function ProcessingStatus({
             body: JSON.stringify({ jobId }),
           });
 
-          if (processRes.ok) {
-            const processData = await processRes.json();
-            if (processData.report) {
-              hasCompleted.current = true;
-              setPhase("completed");
-              await client.models.MeetingJob.update({
-                id: jobId,
-                status: "COMPLETED",
-                reportKey: `reports/${jobId}.txt`,
-              });
-              onComplete(processData.report);
-              return;
-            }
-          }
+          // /process now returns 202 immediately — worker runs async.
+          // Polling loop will detect reportReady: true when worker finishes.
           return;
         }
 

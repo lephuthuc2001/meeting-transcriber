@@ -101,18 +101,29 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
     setRegenerating(true);
     setRegenError(null);
     try {
+      // Kick off async processing
       const res = await fetch(`${apiUrl}/process`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId, feedback: feedback.trim() }),
       });
-      if (!res.ok) throw new Error("Lỗi khi tạo lại biên bản.");
-      const data = await res.json();
-      if (data.report) {
-        setReport(data.report);
-        setFeedback("");
-        toast.success("Đã tạo lại biên bản thành công!");
+      if (!res.ok) throw new Error("Lỗi khi kích hoạt tạo lại biên bản.");
+
+      // Poll /status until the new report appears (worker saves it to S3)
+      for (let attempt = 0; attempt < 60; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const statusRes = await fetch(`${apiUrl}/status?jobId=${jobId}`);
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (statusData.reportReady && statusData.report) {
+            setReport(statusData.report);
+            setFeedback("");
+            toast.success("Đã tạo lại biên bản thành công!");
+            return;
+          }
+        }
       }
+      throw new Error("Quá thời gian chờ. Vui lòng thử lại.");
     } catch (err: any) {
       setRegenError(err.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
       toast.error("Tạo lại biên bản thất bại. Vui lòng thử lại.");
