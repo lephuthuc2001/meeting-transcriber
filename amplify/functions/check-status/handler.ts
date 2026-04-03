@@ -35,18 +35,22 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
-    const command = new GetTranscriptionJobCommand({
-      TranscriptionJobName: jobId,
-    });
-
-    const response = await transcribeClient.send(command);
-    const status =
-      response.TranscriptionJob?.TranscriptionJobStatus || "UNKNOWN";
+    let status = "UNKNOWN";
+    try {
+      const response = await transcribeClient.send(
+        new GetTranscriptionJobCommand({ TranscriptionJobName: jobId })
+      );
+      status = response.TranscriptionJob?.TranscriptionJobStatus || "UNKNOWN";
+    } catch {
+      // Job may have expired in AWS Transcribe — still check S3 for the report
+    }
 
     let reportReady = false;
     let report: string | undefined;
 
-    if (status === "COMPLETED") {
+    // Check S3 if Transcribe says COMPLETED, or if Transcribe job is gone
+    // (expired jobs no longer exist in Transcribe but the S3 report may still be there)
+    if (status === "COMPLETED" || status === "UNKNOWN") {
       for (const ext of ["txt", "html"]) {
         try {
           const reportObj = await s3Client.send(
@@ -56,7 +60,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             })
           );
           report = await reportObj.Body?.transformToString();
-          if (report) { reportReady = true; break; }
+          if (report) { reportReady = true; status = "COMPLETED"; break; }
         } catch {
           // try next extension
         }
