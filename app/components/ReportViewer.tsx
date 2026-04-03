@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Download, CheckCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -110,9 +111,11 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
       if (data.report) {
         setReport(data.report);
         setFeedback("");
+        toast.success("Đã tạo lại biên bản thành công!");
       }
     } catch (err: any) {
       setRegenError(err.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
+      toast.error("Tạo lại biên bản thất bại. Vui lòng thử lại.");
     } finally {
       setRegenerating(false);
     }

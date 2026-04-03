@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ConfigureAmplify from "./components/ConfigureAmplify";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ConfigureAmplify />
         {children}
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );
