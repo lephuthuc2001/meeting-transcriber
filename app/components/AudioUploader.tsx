@@ -21,10 +21,8 @@ const client = generateClient<Schema>({ authMode: "apiKey" });
 
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
-type Language = "vi-VN" | "en-US";
-
 interface AudioUploaderProps {
-  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string, language: Language) => void;
+  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string) => void;
 }
 
 const getAudioDuration = (file: File): Promise<number> =>
@@ -42,7 +40,6 @@ export default function AudioUploader({
   onTranscriptionStarted,
 }: AudioUploaderProps) {
   const [title, setTitle] = useState("");
-  const [language, setLanguage] = useState<Language>("vi-VN");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +87,6 @@ export default function AudioUploader({
             s3Key,
             title: title || file.name.replace(/\.[^/.]+$/, ""),
             fileName: file.name,
-            language,
           }),
         });
 
@@ -110,7 +106,7 @@ export default function AudioUploader({
           audioDurationSeconds,
         });
 
-        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key, language);
+        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key);
         setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");
@@ -173,38 +169,6 @@ export default function AudioUploader({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-1.5 block">
-            Ngôn ngữ / Language
-          </label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setLanguage("vi-VN")}
-              disabled={uploading}
-              className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                language === "vi-VN"
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              Tiếng Việt
-            </button>
-            <button
-              type="button"
-              onClick={() => setLanguage("en-US")}
-              disabled={uploading}
-              className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                language === "en-US"
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              English
-            </button>
-          </div>
-        </div>
-
         <div>
           <label className="text-sm font-medium mb-1.5 block">
             Tên cuộc họp (không bắt buộc)

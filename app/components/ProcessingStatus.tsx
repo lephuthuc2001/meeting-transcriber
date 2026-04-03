@@ -15,7 +15,6 @@ interface ProcessingStatusProps {
   jobId: string;
   audioKey: string;
   audioDurationSeconds: number;
-  language?: "vi-VN" | "en-US";
   onComplete: (report: string) => void;
   onError: (error: string) => void;
   onCancel: () => void;
@@ -45,7 +44,6 @@ export default function ProcessingStatus({
   jobId,
   audioKey,
   audioDurationSeconds,
-  language = "vi-VN",
   onComplete,
   onError,
   onCancel,
@@ -133,7 +131,7 @@ export default function ProcessingStatus({
           const processRes = await fetch(`${apiUrl}/process`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jobId, language }),
+            body: JSON.stringify({ jobId }),
           });
 
           if (processRes.ok) {

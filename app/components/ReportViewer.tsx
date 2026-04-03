@@ -27,18 +27,53 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
   };
 
   const handleDownloadDoc = () => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.getMonth() + 1;
+    const year = today.getFullYear();
+
     const wordContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
     xmlns:w='urn:schemas-microsoft-com:office:word'
     xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
       <meta charset='utf-8'>
-      <title>Biên Bản Cuộc Họp</title>
-      <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+      <title>Nghị Quyết Chi Bộ</title>
+      <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
       <style>
-        body { font-family: 'Courier New', monospace; margin: 2cm; white-space: pre-wrap; }
+        body { font-family: 'Times New Roman', serif; font-size: 14pt; margin: 2cm 2.5cm; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 4pt; }
+        .header-left { font-weight: bold; font-size: 14pt; width: 50%; vertical-align: top; }
+        .header-right { font-weight: bold; font-size: 14pt; width: 50%; text-align: right; vertical-align: top; }
+        .so-hieu { text-align: center; font-size: 14pt; margin: 6pt 0; }
+        .title { text-align: center; font-weight: bold; font-size: 14pt; margin: 12pt 0 2pt 0; }
+        .subtitle { text-align: center; font-weight: bold; font-size: 14pt; margin: 0 0 12pt 0; }
+        .content { font-size: 14pt; white-space: pre-wrap; line-height: 1.5; margin: 6pt 0; }
+        .footer-table { width: 100%; border-collapse: collapse; margin-top: 16pt; }
+        .footer-left { font-size: 13pt; width: 50%; vertical-align: top; }
+        .footer-right { font-size: 14pt; font-weight: bold; width: 50%; text-align: center; vertical-align: top; }
       </style>
     </head>
-    <body><pre>${report}</pre></body>
+    <body>
+      <table class="header-table">
+        <tr>
+          <td class="header-left">ĐẢNG ỦY PHƯỜNG CẨM LỆ<br/>CHI BỘ ……………………………</td>
+          <td class="header-right">ĐẢNG CỘNG SẢN VIỆT NAM<br/>Cẩm Lệ, ngày ${day} tháng ${month} năm ${year}</td>
+        </tr>
+      </table>
+      <div class="so-hieu">*<br/>Số &nbsp;&nbsp;&nbsp;-NQ/CB</div>
+      <div class="title">NGHỊ QUYẾT</div>
+      <div class="content">${report}</div>
+      <table class="footer-table">
+        <tr>
+          <td class="footer-left">
+            Nơi nhận:<br/>
+            - Đảng viên chi bộ,<br/>
+            - Lưu Chi bộ.
+          </td>
+          <td class="footer-right">BÍ THƯ</td>
+        </tr>
+      </table>
+    </body>
   </html>`;
     const blob = new Blob(["\ufeff", wordContent], { type: "application/msword" });
     const url = URL.createObjectURL(blob);

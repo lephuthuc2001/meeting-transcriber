@@ -14,86 +14,48 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
-const SYSTEM_PROMPT_VI = `Bạn là trợ lý tạo biên bản cuộc họp chuyên nghiệp.
-Dưới đây là bản ghi chép tự động từ một cuộc họp.
+const SYSTEM_PROMPT = `Bạn là trợ lý soạn thảo Nghị quyết Chi bộ chuyên nghiệp.
+Dưới đây là bản ghi chép tự động từ buổi sinh hoạt Chi bộ.
 
-Hãy tạo biên bản theo định dạng sau (plain text, KHÔNG dùng HTML hay Markdown):
+Hãy soạn thảo Nghị quyết Chi bộ theo đúng định dạng sau (plain text, KHÔNG dùng HTML hay Markdown):
 
-[TÊN CUỘC HỌP - suy ra từ nội dung]
-================================
-THÔNG TIN CUỘC HỌP
--------------------
-- Loại họp: [suy ra từ nội dung]
-- Thời gian: [nếu được đề cập]
-- Nội dung chính: [số phần]
+NGHỊ QUYẾT
+Chi bộ tháng [tháng/năm - suy ra từ nội dung]
 
-[PHẦN 1: TÊN PHẦN - THEO CHƯƠNG TRÌNH THỰC TẾ]
------------------------------------------------
-[Dùng số thứ tự cho các mục chính]
-1. [Mục chính]:
-   - [Chi tiết]
-     + [Chi tiết nhỏ hơn nếu cần]
+I. Đánh giá tình hình thực hiện nhiệm vụ tháng [tháng]
+1. Lãnh đạo công tác chính trị, tư tưởng
+[Tóm tắt nội dung từ bản ghi chép]
 
-[PHẦN 2: ...] (tiếp tục theo chương trình thực tế của cuộc họp)
+2. Lãnh đạo thực hiện nhiệm vụ chính trị
+[Tóm tắt nội dung từ bản ghi chép]
 
-Ý KIẾN THẢO LUẬN
------------------
-- [Các ý kiến từ người tham dự]
+3. Về công tác xây dựng Đảng
+[Tóm tắt nội dung từ bản ghi chép]
 
-KẾT LUẬN / LƯU Ý KHÁC
------------------------
-[Các kết luận và lưu ý]
+4. Đánh giá chung
+Ưu điểm: [liệt kê từ bản ghi chép]
+Hạn chế: [liệt kê từ bản ghi chép, nếu có]
+
+II. Phương hướng nhiệm vụ tháng [tháng tiếp theo]
+1. Lãnh đạo thực hiện nhiệm vụ chính trị
+[Tóm tắt nội dung từ bản ghi chép]
+
+2. Về công tác xây dựng Đảng
+[Tóm tắt nội dung từ bản ghi chép]
+
+* Đảng viên chi bộ biểu quyết thống nhất thông qua Nghị quyết nhiệm vụ tháng [tháng] đạt 100%.
+
+III. Chấm điểm sinh hoạt chi bộ
+Qua sinh hoạt chi bộ tháng [tháng]/[năm], Chi bộ thống nhất chấm [điểm]/100 điểm - Đảng viên chi bộ biểu quyết đạt 100%.
 
 QUAN TRỌNG:
 - Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt.
-- Đặt tên phần theo CHƯƠNG TRÌNH THỰC TẾ của cuộc họp (không theo mẫu cứng).
-- Trích xuất đầy đủ: số tiền, tên người, ngày tháng, số liệu cụ thể.
-- Tiêu đề phần dùng CHỮ HOA.
+- Điền đầy đủ thông tin từ bản ghi chép: số liệu, tên người, ngày tháng, điểm số nếu được đề cập.
+- Nếu thông tin nào không có trong bản ghi chép, ghi "[không đề cập]".
 - Giữ nguyên tiếng Việt. Đảm bảo nội dung chính xác theo bản ghi chép.`;
 
-const SYSTEM_PROMPT_EN = `You are a professional meeting minutes assistant.
-Below is an automatically transcribed recording from a meeting.
-
-Create meeting minutes in the following format (plain text, NO HTML or Markdown):
-
-[MEETING NAME - inferred from content]
-================================
-MEETING INFORMATION
--------------------
-- Meeting type: [inferred from content]
-- Date/Time: [if mentioned]
-- Main sections: [number of sections]
-
-[SECTION 1: SECTION NAME - BASED ON ACTUAL AGENDA]
------------------------------------------------
-[Use numbered items for main points]
-1. [Main item]:
-   - [Detail]
-     + [Sub-detail if needed]
-
-[SECTION 2: ...] (continue following the actual meeting agenda)
-
-DISCUSSION POINTS
------------------
-- [Points raised by participants]
-
-CONCLUSIONS / OTHER NOTES
------------------------
-[Conclusions and notes]
-
-IMPORTANT:
-- Use plain text only. NO HTML, Markdown, or special characters.
-- Name sections according to the ACTUAL AGENDA of the meeting (not a fixed template).
-- Extract fully: amounts, names, dates, specific figures.
-- Section headings in ALL CAPS.
-- Keep content accurate to the transcript.`;
-
-async function callClaude(transcript: string, language = "vi-VN"): Promise<string> {
-  const isEnglish = language === "en-US";
-  const systemPrompt = isEnglish ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_VI;
-  const userMessage = isEnglish
-    ? `Here is the meeting transcript:\n\n${transcript}`
-    : `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
+async function callClaude(transcript: string): Promise<string> {
+  const userMessage = `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -105,7 +67,7 @@ async function callClaude(transcript: string, language = "vi-VN"): Promise<strin
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
-      system: systemPrompt,
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: "user",
@@ -131,7 +93,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { jobId, language = "vi-VN" } = body;
+    const { jobId } = body;
 
     if (!jobId) {
       return {
@@ -162,7 +124,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       transcriptData.results?.transcripts?.[0]?.transcript ?? "";
 
     // Call Claude API via fetch (no SDK needed)
-    const reportContent = await callClaude(transcriptText, language);
+    const reportContent = await callClaude(transcriptText);
 
     // Save report to S3
     await s3Client.send(
