@@ -47,17 +47,19 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     let report: string | undefined;
 
     if (status === "COMPLETED") {
-      try {
-        const reportObj = await s3Client.send(
-          new GetObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: `reports/${jobId}.txt`,
-          })
-        );
-        report = await reportObj.Body?.transformToString();
-        reportReady = !!report;
-      } catch {
-        reportReady = false;
+      for (const ext of ["txt", "html"]) {
+        try {
+          const reportObj = await s3Client.send(
+            new GetObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: `reports/${jobId}.${ext}`,
+            })
+          );
+          report = await reportObj.Body?.transformToString();
+          if (report) { reportReady = true; break; }
+        } catch {
+          // try next extension
+        }
       }
     }
 
