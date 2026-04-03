@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Download, CheckCircle } from "lucide-react";
+import { Copy, Download, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -11,14 +12,22 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import outputs from "@/amplify_outputs.json";
+
+const apiUrl = (outputs as any).custom?.apiUrl;
 
 interface ReportViewerProps {
   report: string;
+  jobId: string;
   onClose: () => void;
 }
 
-export default function ReportViewer({ report, onClose }: ReportViewerProps) {
+export default function ReportViewer({ report: initialReport, jobId, onClose }: ReportViewerProps) {
+  const [report, setReport] = useState(initialReport);
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState<string | null>(null);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(report);
@@ -86,6 +95,29 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
     URL.revokeObjectURL(url);
   };
 
+  const handleRegenerate = async () => {
+    if (!feedback.trim() || !jobId) return;
+    setRegenerating(true);
+    setRegenError(null);
+    try {
+      const res = await fetch(`${apiUrl}/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, feedback: feedback.trim() }),
+      });
+      if (!res.ok) throw new Error("Lỗi khi tạo lại biên bản.");
+      const data = await res.json();
+      if (data.report) {
+        setReport(data.report);
+        setFeedback("");
+      }
+    } catch (err: any) {
+      setRegenError(err.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
@@ -100,6 +132,38 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
           <pre className="text-sm font-mono whitespace-pre-wrap break-words">{report}</pre>
         </div>
 
+        {/* Feedback section */}
+        <div className="space-y-2 pt-2">
+          <Textarea
+            placeholder="Nhận xét / yêu cầu chỉnh sửa... (ví dụ: Phần II thiếu chi tiết về công tác thu phí)"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            rows={3}
+            disabled={regenerating}
+          />
+          {regenError && (
+            <p className="text-sm text-destructive">{regenError}</p>
+          )}
+          <Button
+            variant="secondary"
+            onClick={handleRegenerate}
+            disabled={!feedback.trim() || regenerating || !jobId}
+            className="w-full"
+          >
+            {regenerating ? (
+              <>
+                <RefreshCw className="size-4 mr-2 animate-spin" />
+                Đang tạo lại...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="size-4 mr-2" />
+                Tạo lại biên bản
+              </>
+            )}
+          </Button>
+        </div>
+
         {copied && (
           <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 rounded-md px-3 py-2">
             <CheckCircle className="size-4" />
@@ -108,11 +172,11 @@ export default function ReportViewer({ report, onClose }: ReportViewerProps) {
         )}
 
         <DialogFooter className="flex-wrap gap-2">
-          <Button variant="outline" onClick={handleCopy}>
+          <Button variant="outline" onClick={handleCopy} disabled={regenerating}>
             <Copy className="size-4 mr-2" />
             Sao chép nội dung
           </Button>
-          <Button variant="outline" onClick={handleDownloadDoc}>
+          <Button variant="outline" onClick={handleDownloadDoc} disabled={regenerating}>
             <Download className="size-4 mr-2" />
             Tải Word (.doc)
           </Button>

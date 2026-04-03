@@ -17,6 +17,7 @@ export default function Home() {
   const [currentAudioKey, setCurrentAudioKey] = useState<string | null>(null);
   const [currentPhase, setCurrentPhase] = useState<Phase>("idle");
   const [currentReport, setCurrentReport] = useState<string | null>(null);
+  const [currentReportJobId, setCurrentReportJobId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [audioDuration, setAudioDuration] = useState<number>(0);
 
@@ -30,9 +31,10 @@ export default function Home() {
 
   const handleProcessingComplete = useCallback((report: string) => {
     setCurrentReport(report);
+    setCurrentReportJobId(currentJobId);
     setCurrentPhase("done");
     setRefreshKey((prev) => prev + 1);
-  }, []);
+  }, [currentJobId]);
 
   const handleProcessingError = useCallback((error: string) => {
     setCurrentPhase("idle");
@@ -49,6 +51,7 @@ export default function Home() {
 
   const handleCloseReport = useCallback(() => {
     setCurrentReport(null);
+    setCurrentReportJobId(null);
     setCurrentPhase("idle");
     setCurrentJobId(null);
     setCurrentAudioKey(null);
@@ -61,6 +64,7 @@ export default function Home() {
       const data = await res.json();
       if (data.report) {
         setCurrentReport(data.report);
+        setCurrentReportJobId(jobId);
         setCurrentPhase("done");
       }
     } catch {
@@ -113,7 +117,11 @@ export default function Home() {
 
       {/* Report Viewer Dialog */}
       {currentReport && (
-        <ReportViewer report={currentReport} onClose={handleCloseReport} />
+        <ReportViewer
+          report={currentReport}
+          jobId={currentReportJobId ?? ""}
+          onClose={handleCloseReport}
+        />
       )}
     </div>
   );

@@ -56,8 +56,11 @@ QUAN TRỌNG:
 - Nếu thông tin nào không có trong bản ghi chép, ghi "[không đề cập]".
 - Giữ nguyên tiếng Việt.`;
 
-async function callClaude(transcript: string): Promise<string> {
-  const userMessage = `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
+async function callClaude(transcript: string, feedback?: string): Promise<string> {
+  let userMessage = `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
+  if (feedback?.trim()) {
+    userMessage += `\n\nNgười dùng có nhận xét sau về bản nháp trước:\n${feedback.trim()}\n\nHãy soạn lại nghị quyết theo nhận xét trên, vẫn dùng đúng định dạng yêu cầu.`;
+  }
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -95,7 +98,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { jobId } = body;
+    const { jobId, feedback } = body;
 
     if (!jobId) {
       return {
@@ -126,7 +129,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       transcriptData.results?.transcripts?.[0]?.transcript ?? "";
 
     // Call Claude API via fetch (no SDK needed)
-    const reportContent = await callClaude(transcriptText);
+    const reportContent = await callClaude(transcriptText, feedback);
 
     // Save report to S3
     await s3Client.send(
