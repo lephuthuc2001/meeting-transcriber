@@ -41,10 +41,10 @@ II. Phương hướng nhiệm vụ tháng [tháng tiếp theo]
 * Đảng viên chi bộ biểu quyết thống nhất thông qua Nghị quyết nhiệm vụ tháng [tháng] đạt 100%.
 
 3. Ý kiến thảo luận:
-[CHÉP NGUYÊN VĂN từng ý kiến phát biểu theo đúng thứ tự trong bản ghi chép. Ghi rõ từng người: "Người phát biểu [N] (Nam/Nữ nếu xác định được): [nội dung nguyên văn]". KHÔNG tóm tắt, KHÔNG lược bỏ bất kỳ ý kiến nào.]
+[Ghi lại ĐẦY ĐỦ từng ý kiến phát biểu theo đúng thứ tự trong bản ghi chép. Giữ nguyên toàn bộ nội dung và ý nghĩa, chỉ chỉnh sửa ngôn ngữ cho mạch lạc, bỏ tiếng lặp/ừ/à/thì/mà không có nghĩa. Ghi rõ từng người: "Người phát biểu [N] (Nam/Nữ nếu xác định được): [nội dung]". KHÔNG lược bỏ bất kỳ ý kiến nào.]
 
 4. Kết luận và lưu ý khác:
-[CHÉP NGUYÊN VĂN toàn bộ phần kết luận và các lưu ý cuối buổi theo đúng thứ tự trong bản ghi chép. KHÔNG tóm tắt.]
+[Ghi lại ĐẦY ĐỦ toàn bộ phần kết luận và các lưu ý cuối buổi theo đúng thứ tự. Giữ nguyên toàn bộ nội dung và ý nghĩa, chỉ chỉnh sửa ngôn ngữ cho mạch lạc, bỏ tiếng lặp/ừ/à không có nghĩa. KHÔNG lược bỏ bất kỳ lưu ý nào.]
 
 III. Chấm điểm sinh hoạt chi bộ
 Qua sinh hoạt chi bộ tháng [tháng]/[năm], Chi bộ thống nhất chấm [điểm]/100 điểm - Đảng viên chi bộ biểu quyết đạt 100%.
@@ -53,7 +53,7 @@ QUAN TRỌNG:
 - Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt.
 - TUYỆT ĐỐI KHÔNG tóm tắt, rút gọn, hay lược bỏ bất kỳ thông tin nào.
 - Ghi lại ĐẦY ĐỦ, CHI TIẾT mọi nội dung, ý kiến, số liệu, tên người, ngày tháng được đề cập trong bản ghi chép.
-- Mục 3 (Ý kiến thảo luận) và mục 4 (Kết luận và lưu ý khác) PHẢI được chép NGUYÊN VĂN, không được tóm tắt.
+- Mục 3 (Ý kiến thảo luận) và mục 4 (Kết luận và lưu ý khác) PHẢI ghi đầy đủ từng ý, không được tóm tắt hay gộp ý. Chỉ được chỉnh ngôn ngữ cho mạch lạc (bỏ tiếng lặp, ừ, à), không thay đổi nội dung.
 - Nếu thông tin nào không có trong bản ghi chép, ghi "[không đề cập]".
 - Giữ nguyên tiếng Việt.`;
 
