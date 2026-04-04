@@ -10,6 +10,8 @@ const BUCKET_NAME = process.env.BUCKET_NAME!;
 const SYSTEM_PROMPT = `Bạn là thư ký ghi biên bản Nghị quyết Chi bộ chuyên nghiệp.
 Dưới đây là bản ghi chép tự động từ buổi sinh hoạt Chi bộ.
 
+Nếu bản ghi chép có nhãn người nói (ví dụ [spk_0], [spk_1],...), hãy cố gắng nhận diện giới tính của từng người dựa vào đại từ xưng hô trong nội dung (anh, chị, ông, bà...) hoặc ngữ cảnh. Khi ghi lại ý kiến thảo luận, ghi rõ "(Nam)" hoặc "(Nữ)" sau tên/nhãn người phát biểu nếu xác định được.
+
 Hãy soạn thảo Nghị quyết Chi bộ theo đúng định dạng sau (plain text, KHÔNG dùng HTML hay Markdown):
 
 NGHỊ QUYẾT
@@ -38,6 +40,12 @@ II. Phương hướng nhiệm vụ tháng [tháng tiếp theo]
 
 * Đảng viên chi bộ biểu quyết thống nhất thông qua Nghị quyết nhiệm vụ tháng [tháng] đạt 100%.
 
+3. Ý kiến thảo luận:
+[CHÉP NGUYÊN VĂN từng ý kiến phát biểu theo đúng thứ tự trong bản ghi chép. Ghi rõ từng người: "Người phát biểu [N] (Nam/Nữ nếu xác định được): [nội dung nguyên văn]". KHÔNG tóm tắt, KHÔNG lược bỏ bất kỳ ý kiến nào.]
+
+4. Kết luận và lưu ý khác:
+[CHÉP NGUYÊN VĂN toàn bộ phần kết luận và các lưu ý cuối buổi theo đúng thứ tự trong bản ghi chép. KHÔNG tóm tắt.]
+
 III. Chấm điểm sinh hoạt chi bộ
 Qua sinh hoạt chi bộ tháng [tháng]/[năm], Chi bộ thống nhất chấm [điểm]/100 điểm - Đảng viên chi bộ biểu quyết đạt 100%.
 
@@ -45,7 +53,7 @@ QUAN TRỌNG:
 - Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt.
 - TUYỆT ĐỐI KHÔNG tóm tắt, rút gọn, hay lược bỏ bất kỳ thông tin nào.
 - Ghi lại ĐẦY ĐỦ, CHI TIẾT mọi nội dung, ý kiến, số liệu, tên người, ngày tháng được đề cập trong bản ghi chép.
-- Mỗi ý kiến của từng người phát biểu đều phải được ghi lại.
+- Mục 3 (Ý kiến thảo luận) và mục 4 (Kết luận và lưu ý khác) PHẢI được chép NGUYÊN VĂN, không được tóm tắt.
 - Nếu thông tin nào không có trong bản ghi chép, ghi "[không đề cập]".
 - Giữ nguyên tiếng Việt.`;
 
@@ -79,6 +87,47 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
   return data.content?.[0]?.text ?? "";
 }
 
+/**
+ * Build a speaker-labelled transcript from AWS Transcribe output.
+ * When speaker_labels are present, each line is prefixed with [spk_N].
+ * Falls back to the plain transcript when speaker data is missing.
+ */
+function buildSpeakerTranscript(transcriptData: any): string {
+  const items: any[] = transcriptData.results?.items ?? [];
+  const speakerSegments: any[] =
+    transcriptData.results?.speaker_labels?.segments ?? [];
+
+  if (speakerSegments.length === 0) {
+    return transcriptData.results?.transcripts?.[0]?.transcript ?? "";
+  }
+
+  // Map each item's start_time → speaker label
+  const timeToSpeaker = new Map<string, string>();
+  for (const seg of speakerSegments) {
+    for (const item of seg.items ?? []) {
+      timeToSpeaker.set(item.start_time, item.speaker_label as string);
+    }
+  }
+
+  let result = "";
+  let currentSpeaker = "";
+  for (const item of items) {
+    const content: string = item.alternatives?.[0]?.content ?? "";
+    if (item.type === "punctuation") {
+      result += content;
+      continue;
+    }
+    const speaker = timeToSpeaker.get(item.start_time) ?? currentSpeaker;
+    if (speaker !== currentSpeaker) {
+      if (result && !result.endsWith("\n")) result += "\n";
+      result += `\n[${speaker}]: `;
+      currentSpeaker = speaker;
+    }
+    result += content + " ";
+  }
+  return result.trim();
+}
+
 // Invoked asynchronously by process-transcript — not an API Gateway handler
 export const handler = async (event: { jobId: string; feedback?: string }) => {
   const { jobId, feedback } = event;
@@ -95,8 +144,7 @@ export const handler = async (event: { jobId: string; feedback?: string }) => {
     if (!transcriptRaw) throw new Error("Transcript not found");
 
     const transcriptData = JSON.parse(transcriptRaw);
-    const transcriptText: string =
-      transcriptData.results?.transcripts?.[0]?.transcript ?? "";
+    const transcriptText = buildSpeakerTranscript(transcriptData);
 
     const reportContent = await callClaude(transcriptText, feedback);
 

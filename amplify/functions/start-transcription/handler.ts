@@ -66,6 +66,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         },
         OutputBucketName: BUCKET_NAME,
         OutputKey: `transcripts/${jobId}.json`,
+        Settings: {
+          ShowSpeakerLabels: true,
+          MaxSpeakerLabels: 10,
+        },
       })
     );
 
