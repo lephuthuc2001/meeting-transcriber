@@ -2,13 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { FileAudio } from "lucide-react";
+import { downloadData } from "aws-amplify/storage";
 import AudioUploader from "./components/AudioUploader";
 import ProcessingStatus from "./components/ProcessingStatus";
 import ReportViewer from "./components/ReportViewer";
 import JobHistory from "./components/JobHistory";
-import outputs from "@/amplify_outputs.json";
-
-const apiUrl = (outputs as any).custom?.apiUrl;
 
 type Phase = "idle" | "uploading" | "transcribing" | "processing" | "done";
 
@@ -57,16 +55,13 @@ export default function Home() {
     setCurrentAudioKey(null);
   }, []);
 
-  const handleViewReport = useCallback(async (jobId: string) => {
+  const handleViewReport = useCallback(async (jobId: string, reportKey: string) => {
     try {
-      const res = await fetch(`${apiUrl}/status?jobId=${jobId}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      if (data.report) {
-        setCurrentReport(data.report);
-        setCurrentReportJobId(jobId);
-        setCurrentPhase("done");
-      }
+      const { body } = await downloadData({ path: reportKey }).result;
+      const text = await body.text();
+      setCurrentReport(text);
+      setCurrentReportJobId(jobId);
+      setCurrentPhase("done");
     } catch {
       console.error("Lỗi khi tải biên bản.");
     }

@@ -10,6 +10,7 @@ import {
   FileAudio,
   Clock,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,7 @@ const STATUS_COLORS: Record<JobStatus, string> = {
 
 interface JobHistoryProps {
   refreshKey: number;
-  onViewReport: (jobId: string) => void;
+  onViewReport: (jobId: string, reportKey: string) => Promise<void>;
 }
 
 export default function JobHistory({
@@ -75,6 +76,7 @@ export default function JobHistory({
   const [editingTitle, setEditingTitle] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Schema["MeetingJob"]["type"] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -107,8 +109,13 @@ export default function JobHistory({
     }
   };
 
-  const handleViewReport = async (jobId: string) => {
-    onViewReport(jobId);
+  const handleViewReport = async (jobId: string, reportKey: string) => {
+    setViewingId(jobId);
+    try {
+      await onViewReport(jobId, reportKey);
+    } finally {
+      setViewingId(null);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -267,9 +274,17 @@ export default function JobHistory({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleViewReport(job.id)}
+                            onClick={() => handleViewReport(job.id, job.reportKey ?? "")}
+                            disabled={viewingId === job.id}
                           >
-                            Xem biên bản
+                            {viewingId === job.id ? (
+                              <>
+                                <Loader2 className="size-3 animate-spin" />
+                                Đang tải...
+                              </>
+                            ) : (
+                              "Xem biên bản"
+                            )}
                           </Button>
                         )}
                         {(status === "COMPLETED" || status === "FAILED") && (
@@ -320,10 +335,10 @@ export default function JobHistory({
               disabled={!!deletingId}
             >
               {deletingId ? (
-                <span className="flex items-center gap-2">
-                  <span className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <>
+                  <Loader2 className="size-4 animate-spin" />
                   Đang xóa...
-                </span>
+                </>
               ) : (
                 "Xóa"
               )}
