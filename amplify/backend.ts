@@ -10,6 +10,7 @@ import { checkStatus } from "./functions/check-status/resource.js";
 import { processTranscript } from "./functions/process-transcript/resource.js";
 import { processTranscriptWorker } from "./functions/process-transcript-worker/resource.js";
 import { cancelJob } from "./functions/cancel-job/resource.js";
+import { deleteJob } from "./functions/delete-job/resource.js";
 
 const backend = defineBackend({
   auth,
@@ -20,6 +21,7 @@ const backend = defineBackend({
   processTranscript,
   processTranscriptWorker,
   cancelJob,
+  deleteJob,
 });
 
 // Get the S3 bucket reference from storage
@@ -33,6 +35,7 @@ const lambdaResources = [
   backend.processTranscript.resources.lambda,
   backend.processTranscriptWorker.resources.lambda,
   backend.cancelJob.resources.lambda,
+  backend.deleteJob.resources.lambda,
 ];
 
 for (const lambdaFn of lambdaResources) {
@@ -74,6 +77,18 @@ backend.checkStatus.resources.lambda.role?.attachInlinePolicy(
 
 backend.cancelJob.resources.lambda.role?.attachInlinePolicy(
   new Policy(backend.cancelJob.resources.lambda, "TranscribeCancelPolicy", {
+    statements: [
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["transcribe:DeleteTranscriptionJob"],
+        resources: ["*"],
+      }),
+    ],
+  })
+);
+
+backend.deleteJob.resources.lambda.role?.attachInlinePolicy(
+  new Policy(backend.deleteJob.resources.lambda, "TranscribeDeletePolicy", {
     statements: [
       new PolicyStatement({
         effect: Effect.ALLOW,
@@ -129,6 +144,13 @@ const cancelResource = api.root.addResource("cancel");
 cancelResource.addMethod(
   "POST",
   new apigateway.LambdaIntegration(backend.cancelJob.resources.lambda)
+);
+
+// POST /delete -> deleteJob lambda
+const deleteResource = api.root.addResource("delete");
+deleteResource.addMethod(
+  "POST",
+  new apigateway.LambdaIntegration(backend.deleteJob.resources.lambda)
 );
 
 // Allow process-transcript to invoke the worker asynchronously

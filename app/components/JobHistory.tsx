@@ -9,7 +9,9 @@ import {
   Download,
   FileAudio,
   Clock,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { JobStatus } from "@/lib/types";
 import outputs from "@/amplify_outputs.json";
 
@@ -63,6 +73,8 @@ export default function JobHistory({
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Schema["MeetingJob"]["type"] | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -97,6 +109,29 @@ export default function JobHistory({
 
   const handleViewReport = async (jobId: string) => {
     onViewReport(jobId);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    const { id: jobId, audioKey, reportKey } = deleteTarget;
+    setDeletingId(jobId);
+    try {
+      const res = await fetch(`${apiUrl}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, audioKey, reportKey }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await client.models.MeetingJob.delete({ id: jobId });
+      setJobs((prev) => prev.filter((j) => j.id !== jobId));
+      setDeleteTarget(null);
+      toast.success("Đã xóa cuộc họp");
+    } catch (err) {
+      console.error("Lỗi khi xóa cuộc họp:", err);
+      toast.error("Không thể xóa cuộc họp. Vui lòng thử lại.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleTitleSave = async (jobId: string) => {
@@ -237,6 +272,17 @@ export default function JobHistory({
                             Xem biên bản
                           </Button>
                         )}
+                        {(status === "COMPLETED" || status === "FAILED") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Xóa cuộc họp"
+                            title="Xóa cuộc họp"
+                            onClick={() => setDeleteTarget(job)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -246,6 +292,45 @@ export default function JobHistory({
           </Table>
         )}
       </CardContent>
+
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa cuộc họp?</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn xóa cuộc họp{" "}
+              <strong>{deleteTarget?.title || "Không có tiêu đề"}</strong>?
+              Hành động này sẽ xóa toàn bộ dữ liệu (âm thanh, bản ghi, biên bản) và không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={!!deletingId}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={!!deletingId}
+            >
+              {deletingId ? (
+                <span className="flex items-center gap-2">
+                  <span className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Đang xóa...
+                </span>
+              ) : (
+                "Xóa"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
