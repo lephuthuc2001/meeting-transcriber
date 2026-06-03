@@ -41,7 +41,7 @@ import {
 import type { JobStatus } from "@/lib/types";
 import outputs from "@/amplify_outputs.json";
 
-const client = generateClient<Schema>({ authMode: "apiKey" });
+const client = generateClient<Schema>({ authMode: "iam" });
 const apiUrl = (outputs as any).custom?.apiUrl;
 
 const STATUS_LABELS: Record<JobStatus, string> = {

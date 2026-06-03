@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import outputs from "@/amplify_outputs.json";
 
 const apiUrl = (outputs as any).custom?.apiUrl;
-const client = generateClient<Schema>({ authMode: "apiKey" });
+const client = generateClient<Schema>({ authMode: "iam" });
 
 interface ProcessingStatusProps {
   jobId: string;
