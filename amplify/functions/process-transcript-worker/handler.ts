@@ -72,7 +72,8 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
     },
     body: JSON.stringify({
       model: "claude-sonnet-5",
-      max_tokens: 8192,
+      max_tokens: 16000,
+      thinking: { type: "disabled" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -84,7 +85,13 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
   }
 
   const data = (await response.json()) as any;
-  return data.content?.[0]?.text ?? "";
+  const textBlock = data.content?.find((block: any) => block.type === "text");
+  if (!textBlock?.text) {
+    throw new Error(
+      `Claude API returned no text content (stop_reason: ${data.stop_reason})`
+    );
+  }
+  return textBlock.text;
 }
 
 /**
