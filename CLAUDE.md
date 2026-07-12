@@ -11,7 +11,7 @@ Vietnamese meeting-transcription web app. Users upload meeting audio; AWS Transc
 - **Frontend**: Next.js 16 App Router, React 19, Tailwind v4, Radix UI primitives, `sonner` toasts
 - **Backend**: AWS Amplify Gen 2 (`@aws-amplify/backend`)
 - **AWS services**: Cognito, S3, DynamoDB (via AppSync/Data), Lambda, API Gateway REST, Amazon Transcribe
-- **AI**: Anthropic Messages API directly via `fetch` (model `claude-sonnet-4-20250514`). The `@anthropic-ai/sdk` is a devDependency but not used at runtime in Lambdas.
+- **AI**: Anthropic Messages API directly via `fetch` (model `claude-sonnet-5`). The `@anthropic-ai/sdk` is a devDependency but not used at runtime in Lambdas.
 - **Package manager**: pnpm 8.15.4 (pinned — `amplify.yml` installs this exact version)
 
 ## Commands
