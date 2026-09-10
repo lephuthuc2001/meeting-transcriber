@@ -20,7 +20,7 @@ Số [số]-NQ/CB
 NGHỊ QUYẾT
 Lãnh đạo thực hiện nhiệm vụ tháng [tháng/năm của kỳ tới]
 
-[Đoạn mở đầu, viết liền một đoạn: Ngày [dd/mm/yyyy], tại [địa điểm], Chi bộ [tên] tổ chức sinh hoạt chi bộ thường kỳ tháng [tháng/năm]. Tổng số đảng viên của chi bộ: [số] đồng chí; có mặt [số] đồng chí; vắng mặt [số] đồng chí (có lý do [số], không có lý do [số]); đảng viên được miễn công tác, sinh hoạt đảng: [số] đồng chí. Thời lượng sinh hoạt: [số] phút. Đồng chí [họ tên], Bí thư Chi bộ chủ trì; đồng chí [họ tên] được cử làm thư ký kỳ họp. Chi bộ đã thông báo tình hình nộp đảng phí và thông qua chương trình sinh hoạt.]
+[Đoạn mở đầu, viết liền một đoạn: Ngày [dd/mm/yyyy], tại [địa điểm], Chi bộ [tên] tổ chức sinh hoạt chi bộ thường kỳ tháng [tháng/năm]. Tổng số đảng viên của chi bộ: [số] đồng chí; có mặt [số] đồng chí; vắng mặt [số] đồng chí (có lý do [số], không có lý do [số]); đảng viên được miễn công tác, sinh hoạt đảng: [số] đồng chí. Thời lượng sinh hoạt: [số] phút (nếu bản ghi chép không nêu, ghi "…… phút"). Đồng chí [họ tên], Bí thư Chi bộ chủ trì; đồng chí [họ tên] được cử làm thư ký kỳ họp. Chi bộ đã thông báo tình hình nộp đảng phí và thông qua chương trình sinh hoạt.]
 
 Sau khi nghe Chi ủy báo cáo, chi bộ đã thảo luận, tự phê bình và phê bình, thống nhất ban hành nghị quyết như sau:
 
@@ -38,7 +38,7 @@ c) Thực hiện dân chủ ở cơ sở, xây dựng đời sống văn hóa, p
 d) Công tác phòng, chống tham nhũng, lãng phí, tiêu cực; bảo đảm vệ sinh môi trường, trật tự đô thị
 đ) Công tác quản lý đảng viên, tạo nguồn phát triển đảng
 e) Việc thực hiện Kết luận Trung ương 4 gắn với Kết luận số 01-KL/TW
-[Mỗi mục ghi đầy đủ nội dung tương ứng được đề cập trong bản ghi chép. Bỏ mục nào hoàn toàn không được đề cập.]
+[Danh sách trên là các đầu mục gợi ý. Mỗi mục ghi đầy đủ nội dung tương ứng được đề cập trong bản ghi chép; bỏ mục nào hoàn toàn không được đề cập, và bổ sung đầu mục mới nếu bản ghi chép có nội dung không thuộc mục nào ở trên. SAU KHI bỏ/bổ sung, PHẢI đánh lại thứ tự chữ cái LIÊN TỤC bắt đầu từ a) — tuyệt đối không để ngắt quãng (không được bắt đầu bằng c), cũng không được nhảy từ b) sang d)).]
 
 3. Kết quả thực hiện Nghị quyết Chi bộ tháng [tháng liền trước]
 Chi ủy tổng hợp, đối chiếu kết quả thực hiện từng nhiệm vụ đề ra tại Mục II Nghị quyết Chi bộ tháng [tháng liền trước] như sau:
@@ -62,7 +62,7 @@ II. PHƯƠNG HƯỚNG, NHIỆM VỤ THÁNG [tháng tới]
 a) [Tên đầu việc]
 [Nội dung: giao ai chủ trì, làm gì, thời hạn hoàn thành, báo cáo kết quả tại kỳ sinh hoạt nào]
 b) [Tên đầu việc]
-[…tiếp tục c) d) đ) e) g) h) theo đúng thứ tự chữ cái tiếng Việt dùng trong văn bản Đảng: a, b, c, d, đ, e, g, h, i, k]
+[…tiếp tục c) d) đ) e) g) h) theo đúng thứ tự chữ cái tiếng Việt dùng trong văn bản Đảng: a, b, c, d, đ, e, g, h, i, k. Luôn bắt đầu từ a) và đánh liên tục, không ngắt quãng.]
 [Khi một đầu việc có nhiều nội dung nhỏ, liệt kê bằng dấu chấm đầu dòng "• " ở đầu dòng.]
 
 III. PHÂN CÔNG NHIỆM VỤ VÀ TỔ CHỨC THỰC HIỆN
@@ -97,7 +97,7 @@ QUAN TRỌNG:
 - Tiêu đề Mục I, II, III, IV viết IN HOA, đúng dạng "I. ", "II. ", "III. ", "IV. ".
 - TUYỆT ĐỐI KHÔNG tóm tắt, rút gọn, hay lược bỏ bất kỳ thông tin nào của bản ghi chép. Mọi nội dung, số liệu, tên người, ngày tháng, văn bản (số hiệu, ngày ban hành) được đề cập đều phải xuất hiện ở mục phù hợp.
 - Nội dung thảo luận trong bản ghi chép phải được phân bổ vào đúng mục I và II; phần PHỤ LỤC giữ lại nguyên vẹn từng ý kiến để đối chiếu, không thay thế cho mục I và II.
-- Nếu thông tin nào không có trong bản ghi chép, ghi "[không đề cập]"; riêng các mục a), b), c)… hoàn toàn không được đề cập thì bỏ hẳn mục đó.
+- Nếu thông tin nào không có trong bản ghi chép: ở đoạn mở đầu và các dòng thể thức, để dấu chấm lửng "……" đúng chỗ để người ký điền tay; ở phần nội dung, ghi "[không đề cập]". Riêng các mục a), b), c)… hoàn toàn không được đề cập thì bỏ hẳn mục đó rồi đánh lại chữ cái liên tục từ a).
 - Giữ nguyên tiếng Việt.`;
 
 async function callClaude(transcript: string, feedback?: string): Promise<string> {
