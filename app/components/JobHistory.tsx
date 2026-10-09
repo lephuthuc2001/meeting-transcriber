@@ -143,7 +143,7 @@ export default function JobHistory({
   const handleTitleSave = async (jobId: string) => {
     const trimmed = editingTitle.trim();
     if (trimmed) {
-      await client.models.MeetingJob.update({ id: jobId, title: trimmed });
+      await client.models.MeetingJob.update({ id: jobId, title: trimmed, autoTitle: false });
       setJobs((prev) =>
         prev.map((j) => (j.id === jobId ? { ...j, title: trimmed } : j))
       );
@@ -249,6 +249,7 @@ export default function JobHistory({
                         }}
                       >
                         <span className="truncate">
+                          {job.autoTitle && <span title="Tên do hệ thống tự đặt">✨ </span>}
                           {job.title || "Không có tiêu đề"}
                         </span>
                         <Pencil

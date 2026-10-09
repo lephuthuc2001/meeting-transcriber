@@ -47,6 +47,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     let reportReady = false;
     let report: string | undefined;
+    let title: string | undefined;
 
     // Check S3 if Transcribe says COMPLETED, or if Transcribe job is gone
     // (expired jobs no longer exist in Transcribe but the S3 report may still be there)
@@ -60,6 +61,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             })
           );
           report = await reportObj.Body?.transformToString();
+          const rawTitle = reportObj.Metadata?.title;
+          if (rawTitle) {
+            try { title = decodeURIComponent(rawTitle); } catch { /* ignore malformed */ }
+          }
           if (report) { reportReady = true; status = "COMPLETED"; break; }
         } catch {
           // try next extension
@@ -75,6 +80,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         status,
         reportReady,
         ...(report && { report }),
+        ...(title && { title }),
       }),
     };
   } catch (error) {

@@ -116,6 +116,13 @@ export default function ProcessingStatus({
             status: "COMPLETED",
             reportKey: `reports/${jobId}.txt`,
           });
+          if (data.title) {
+            // Only replace placeholder titles, never a name the user typed
+            const { data: job } = await client.models.MeetingJob.get({ id: jobId });
+            if (job?.autoTitle) {
+              await client.models.MeetingJob.update({ id: jobId, title: data.title });
+            }
+          }
           onComplete(data.report);
           return;
         }
