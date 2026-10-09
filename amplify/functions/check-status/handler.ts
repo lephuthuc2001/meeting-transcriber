@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-transcribe";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import {
+  applyAutoTitle,
   getMeetingJob,
   setMeetingJobStatus,
   type MeetingJobRow,
@@ -69,6 +70,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     let reportReady = false;
     let report: string | undefined;
     let reportKey: string | undefined;
+    let title: string | undefined;
 
     // A failed transcription writes no transcript, so the S3 trigger never
     // fires — this is the only place the row learns about it.
@@ -90,6 +92,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             })
           );
           report = await reportObj.Body?.transformToString();
+          const rawTitle = reportObj.Metadata?.title;
+          if (rawTitle) {
+            try { title = decodeURIComponent(rawTitle); } catch { /* ignore malformed */ }
+          }
           if (report) {
             reportReady = true;
             reportKey = `reports/${jobId}.${ext}`;
@@ -111,6 +117,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         !(row.status === "PROCESSING" && !isStale(row))
       ) {
         await setMeetingJobStatus(jobId, "COMPLETED", { reportKey });
+        if (title) await applyAutoTitle(jobId, title);
       }
 
       if (!reportReady && row?.status === "FAILED") {
@@ -137,6 +144,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         reportReady,
         ...(report && { report }),
         ...(status === "FAILED" && errorMessage && { errorMessage }),
+        // Only when it replaced a placeholder, never a name the user typed
+        ...(title && row?.autoTitle && { title }),
       }),
     };
   } catch (error) {

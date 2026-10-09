@@ -17,7 +17,7 @@ interface ProcessingStatusProps {
   jobId: string;
   audioKey: string;
   audioDurationSeconds: number;
-  onComplete: (report: string) => void;
+  onComplete: (report: string, title?: string) => void;
   onError: (error: string) => void;
   onCancel: () => void;
 }
@@ -107,7 +107,9 @@ export default function ProcessingStatus({
         if (data.reportReady && !hasCompleted.current) {
           hasCompleted.current = true;
           setPhase("completed");
-          onComplete(data.report);
+          // The worker already applied the AI title to the row; check-status
+          // only returns it when it replaced a placeholder
+          onComplete(data.report, data.title);
           return;
         }
 

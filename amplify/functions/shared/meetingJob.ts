@@ -24,6 +24,7 @@ export type JobStatus =
 export interface MeetingJobRow {
   id: string;
   status?: JobStatus;
+  autoTitle?: boolean;
   errorMessage?: string;
   updatedAt?: string;
 }
@@ -40,6 +41,7 @@ export async function getMeetingJob(
 export async function createMeetingJob(job: {
   id: string;
   title: string;
+  autoTitle: boolean;
   audioKey: string;
   fileName: string;
   audioDurationSeconds?: number;
@@ -108,6 +110,37 @@ export async function setMeetingJobStatus(
         ConditionExpression: "attribute_exists(id)",
         ExpressionAttributeNames: names,
         ExpressionAttributeValues: values,
+      })
+    );
+  } catch (err: any) {
+    if (err?.name === "ConditionalCheckFailedException") return;
+    throw err;
+  }
+}
+
+// Replaces the placeholder title with the AI-generated one; a no-op once the
+// user has named the meeting themselves (autoTitle false).
+export async function applyAutoTitle(
+  jobId: string,
+  title: string
+): Promise<void> {
+  try {
+    await docClient.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { id: jobId },
+        UpdateExpression: "SET #title = :title, #updatedAt = :updatedAt",
+        ConditionExpression: "#autoTitle = :true",
+        ExpressionAttributeNames: {
+          "#title": "title",
+          "#autoTitle": "autoTitle",
+          "#updatedAt": "updatedAt",
+        },
+        ExpressionAttributeValues: {
+          ":title": title,
+          ":true": true,
+          ":updatedAt": new Date().toISOString(),
+        },
       })
     );
   } catch (err: any) {

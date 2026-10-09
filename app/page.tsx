@@ -6,7 +6,7 @@ import { downloadData } from "aws-amplify/storage";
 import AudioUploader from "./components/AudioUploader";
 import ProcessingStatus from "./components/ProcessingStatus";
 import ReportViewer from "./components/ReportViewer";
-import JobHistory from "./components/JobHistory";
+import JobHistory, { type HistoryJob } from "./components/JobHistory";
 
 type Phase = "idle" | "uploading" | "transcribing" | "processing" | "done";
 
@@ -16,19 +16,24 @@ export default function Home() {
   const [currentPhase, setCurrentPhase] = useState<Phase>("idle");
   const [currentReport, setCurrentReport] = useState<string | null>(null);
   const [currentReportJobId, setCurrentReportJobId] = useState<string | null>(null);
+  const [currentTitle, setCurrentTitle] = useState<string | null>(null);
+  const [currentCreatedAt, setCurrentCreatedAt] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [audioDuration, setAudioDuration] = useState<number>(0);
 
-  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number, audioKey: string) => {
+  const handleTranscriptionStarted = useCallback((jobId: string, audioDurationSeconds: number, audioKey: string, title: string) => {
     setCurrentJobId(jobId);
+    setCurrentTitle(title);
+    setCurrentCreatedAt(new Date().toISOString());
     setCurrentAudioKey(audioKey);
     setAudioDuration(audioDurationSeconds);
     setCurrentPhase("transcribing");
     setRefreshKey((prev) => prev + 1);
   }, []);
 
-  const handleProcessingComplete = useCallback((report: string) => {
+  const handleProcessingComplete = useCallback((report: string, title?: string) => {
     setCurrentReport(report);
+    if (title) setCurrentTitle(title);
     setCurrentReportJobId(currentJobId);
     setCurrentPhase("done");
     setRefreshKey((prev) => prev + 1);
@@ -55,12 +60,14 @@ export default function Home() {
     setCurrentAudioKey(null);
   }, []);
 
-  const handleViewReport = useCallback(async (jobId: string, reportKey: string) => {
+  const handleViewReport = useCallback(async (job: HistoryJob) => {
     try {
-      const { body } = await downloadData({ path: reportKey }).result;
+      const { body } = await downloadData({ path: job.reportKey ?? "" }).result;
       const text = await body.text();
       setCurrentReport(text);
-      setCurrentReportJobId(jobId);
+      setCurrentReportJobId(job.id);
+      setCurrentTitle(job.title ?? null);
+      setCurrentCreatedAt(job.createdAt);
       setCurrentPhase("done");
     } catch {
       console.error("Lỗi khi tải biên bản.");
@@ -144,6 +151,8 @@ export default function Home() {
         <ReportViewer
           report={currentReport}
           jobId={currentReportJobId ?? ""}
+          title={currentTitle}
+          createdAt={currentCreatedAt}
           onClose={handleCloseReport}
         />
       )}

@@ -5,7 +5,7 @@ import {
   HeadObjectCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
-import { setMeetingJobStatus } from "../shared/meetingJob";
+import { applyAutoTitle, setMeetingJobStatus } from "../shared/meetingJob";
 
 const s3Client = new S3Client();
 const BUCKET_NAME = process.env.BUCKET_NAME!;
@@ -14,6 +14,8 @@ const SYSTEM_PROMPT = `Bạn là thư ký ghi biên bản Nghị quyết Chi b�
 Dưới đây là bản ghi chép tự động từ buổi sinh hoạt Chi bộ.
 
 Hãy soạn thảo Nghị quyết Chi bộ theo đúng thể thức tại Hướng dẫn số 42-HD/BTCTW ngày 28/10/2025 của Ban Tổ chức Trung ương, xuất ra PLAIN TEXT (KHÔNG dùng HTML hay Markdown), theo đúng khung sau:
+
+DÒNG ĐẦU TIÊN của câu trả lời (trước toàn bộ nghị quyết) phải có dạng "TIÊU ĐỀ: <tên ngắn gọn của cuộc họp, tối đa 12 từ, nêu nội dung chính và tháng/năm nếu biết>", ví dụ "TIÊU ĐỀ: Sinh hoạt chi bộ tháng 9/2026 – thu đảng phí, chuẩn bị đại hội". Dòng này dùng để đặt tên cuộc họp, hệ thống sẽ tách ra trước khi lưu; sau đó mới đến dòng "ĐẢNG ỦY …".
 
 ĐẢNG ỦY PHƯỜNG [tên phường, mặc định: CẨM LỆ]
 CHI BỘ [số/tên chi bộ]
@@ -181,6 +183,14 @@ function buildSpeakerTranscript(transcriptData: any): string {
   return result.trim();
 }
 
+// Strips the leading "TIÊU ĐỀ: …" line so parseReport still sees ĐẢNG ỦY… first
+function splitTitle(raw: string): { title?: string; report: string } {
+  const match = raw.match(/^\s*TIÊU ĐỀ\s*:\s*(.+)\r?\n/i);
+  if (!match) return { report: raw };
+  const title = match[1].trim().slice(0, 150);
+  return { title: title || undefined, report: raw.slice(match[0].length).replace(/^\s*\n/, "") };
+}
+
 type WorkerEvent = { jobId: string; feedback?: string } | S3Event;
 
 const REPORT_KEY = (jobId: string) => `reports/${jobId}.txt`;
@@ -213,7 +223,9 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
     const transcriptData = JSON.parse(transcriptRaw);
     const transcriptText = buildSpeakerTranscript(transcriptData);
 
-    const reportContent = await callClaude(transcriptText, feedback);
+    const { title, report: reportContent } = splitTitle(
+      await callClaude(transcriptText, feedback)
+    );
 
     await s3Client.send(
       new PutObjectCommand({
@@ -221,9 +233,12 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
         Key: REPORT_KEY(jobId),
         Body: reportContent,
         ContentType: "text/plain; charset=utf-8",
+        // S3 metadata must be ASCII, so the Vietnamese title is URI-encoded
+        ...(title && { Metadata: { title: encodeURIComponent(title) } }),
       })
     );
 
+    if (title) await applyAutoTitle(jobId, title);
     await setMeetingJobStatus(jobId, "COMPLETED", {
       reportKey: REPORT_KEY(jobId),
     });

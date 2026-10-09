@@ -43,7 +43,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { s3Key, title, fileName, audioDurationSeconds } = body;
+    const { s3Key, title, autoTitle, fileName, audioDurationSeconds } = body;
 
     if (!s3Key || !title || !fileName) {
       return {
@@ -62,6 +62,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     await createMeetingJob({
       id: jobId,
       title,
+      // true when the title is a placeholder the AI-generated one replaces
+      autoTitle: autoTitle === true,
       audioKey: s3Key,
       fileName,
       ...(Number.isFinite(audioDurationSeconds) && {

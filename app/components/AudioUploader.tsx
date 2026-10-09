@@ -19,7 +19,7 @@ const apiUrl = (outputs as any).custom?.apiUrl;
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
 interface AudioUploaderProps {
-  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string) => void;
+  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string, title: string) => void;
 }
 
 const getAudioDuration = (file: File): Promise<number> =>
@@ -77,12 +77,20 @@ export default function AudioUploader({
         uploadTaskRef.current = task;
         await task.result;
 
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const trimmedTitle = title.trim();
+        const jobTitle =
+          trimmedTitle ||
+          `Cuộc họp ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
         const response = await fetch(`${apiUrl}/transcribe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             s3Key,
-            title: title || file.name.replace(/\.[^/.]+$/, ""),
+            title: jobTitle,
+            autoTitle: !trimmedTitle,
             fileName: file.name,
             audioDurationSeconds,
           }),
@@ -95,7 +103,7 @@ export default function AudioUploader({
         // /transcribe also creates the MeetingJob history row
         const data = await response.json();
 
-        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key);
+        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key, jobTitle);
         setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");
@@ -160,12 +168,12 @@ export default function AudioUploader({
       <CardContent className="space-y-4">
         <div>
           <label htmlFor="meeting-title" className="text-base font-medium mb-2 block">
-            Tên cuộc họp (không bắt buộc)
+            Tên cuộc họp (có thể để trống)
           </label>
           <Input
             id="meeting-title"
             type="text"
-            placeholder="Ví dụ: Họp ban giám đốc ngày 08/03"
+            placeholder="Để trống, hệ thống sẽ tự đặt tên theo nội dung"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={uploading}
