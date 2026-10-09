@@ -4,7 +4,6 @@ import { useState, useRef, useCallback } from "react";
 import { uploadData, type UploadDataWithPathOutput } from "aws-amplify/storage";
 import { Upload, FileAudio } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -36,7 +35,6 @@ const getAudioDuration = (file: File): Promise<number> =>
 export default function AudioUploader({
   onTranscriptionStarted,
 }: AudioUploaderProps) {
-  const [title, setTitle] = useState("");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -79,9 +77,8 @@ export default function AudioUploader({
 
         const now = new Date();
         const pad = (n: number) => String(n).padStart(2, "0");
-        const trimmedTitle = title.trim();
+        // Placeholder until the worker's AI-generated title replaces it
         const jobTitle =
-          trimmedTitle ||
           `Cuộc họp ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
         const response = await fetch(`${apiUrl}/transcribe`, {
@@ -90,7 +87,7 @@ export default function AudioUploader({
           body: JSON.stringify({
             s3Key,
             title: jobTitle,
-            autoTitle: !trimmedTitle,
+            autoTitle: true,
             fileName: file.name,
             audioDurationSeconds,
           }),
@@ -104,7 +101,6 @@ export default function AudioUploader({
         const data = await response.json();
 
         onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key, jobTitle);
-        setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");
       } finally {
@@ -115,7 +111,7 @@ export default function AudioUploader({
         }
       }
     },
-    [title, onTranscriptionStarted]
+    [onTranscriptionStarted]
   );
 
   const handleCancel = () => {
@@ -166,20 +162,6 @@ export default function AudioUploader({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label htmlFor="meeting-title" className="text-base font-medium mb-2 block">
-            Tên cuộc họp (có thể để trống)
-          </label>
-          <Input
-            id="meeting-title"
-            type="text"
-            placeholder="Để trống, hệ thống sẽ tự đặt tên theo nội dung"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={uploading}
-          />
-        </div>
-
         <div
           className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 transition-colors cursor-pointer ${
             isDragOver
