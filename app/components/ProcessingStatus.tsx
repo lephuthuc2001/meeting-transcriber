@@ -15,7 +15,7 @@ interface ProcessingStatusProps {
   jobId: string;
   audioKey: string;
   audioDurationSeconds: number;
-  onComplete: (report: string) => void;
+  onComplete: (report: string, title?: string) => void;
   onError: (error: string) => void;
   onCancel: () => void;
 }
@@ -116,7 +116,16 @@ export default function ProcessingStatus({
             status: "COMPLETED",
             reportKey: `reports/${jobId}.txt`,
           });
-          onComplete(data.report);
+          let finalTitle: string | undefined;
+          if (data.title) {
+            // Only replace placeholder titles, never a name the user typed
+            const { data: job } = await client.models.MeetingJob.get({ id: jobId });
+            if (job?.autoTitle) {
+              await client.models.MeetingJob.update({ id: jobId, title: data.title });
+              finalTitle = data.title;
+            }
+          }
+          onComplete(data.report, finalTitle);
           return;
         }
 

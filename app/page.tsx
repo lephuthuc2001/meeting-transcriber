@@ -31,8 +31,9 @@ export default function Home() {
     setRefreshKey((prev) => prev + 1);
   }, []);
 
-  const handleProcessingComplete = useCallback((report: string) => {
+  const handleProcessingComplete = useCallback((report: string, title?: string) => {
     setCurrentReport(report);
+    if (title) setCurrentTitle(title);
     setCurrentReportJobId(currentJobId);
     setCurrentPhase("done");
     setRefreshKey((prev) => prev + 1);
