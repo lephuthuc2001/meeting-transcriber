@@ -89,7 +89,7 @@ export default function ReportViewer({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto gap-6">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto gap-6 [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle className="text-2xl">Biên bản đã sẵn sàng</DialogTitle>
           <DialogDescription className="text-base">
@@ -102,7 +102,7 @@ export default function ReportViewer({
             <FileText className="size-6" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-lg font-semibold">
+            <p className="line-clamp-2 break-words text-lg font-semibold" title={title || undefined}>
               {title || "Nghị quyết Chi bộ"}
             </p>
             <p className="text-base text-muted-foreground">
