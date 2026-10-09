@@ -233,10 +233,7 @@ export default function JobHistory({
   const filteredJobs = jobs.filter((job) => {
     if (!search) return true;
     const term = search.toLowerCase();
-    return (
-      (job.title?.toLowerCase().includes(term)) ||
-      (job.fileName?.toLowerCase().includes(term))
-    );
+    return job.title?.toLowerCase().includes(term) ?? false;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
