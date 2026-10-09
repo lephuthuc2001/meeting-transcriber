@@ -233,10 +233,7 @@ export default function JobHistory({
   const filteredJobs = jobs.filter((job) => {
     if (!search) return true;
     const term = search.toLowerCase();
-    return (
-      (job.title?.toLowerCase().includes(term)) ||
-      (job.fileName?.toLowerCase().includes(term))
-    );
+    return job.title?.toLowerCase().includes(term) ?? false;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
@@ -327,7 +324,7 @@ export default function JobHistory({
                           setEditingTitle(job.title ?? "");
                         }}
                       >
-                        <span className="truncate">
+                        <span className="line-clamp-2 break-words">
                           {job.autoTitle && <span title="Tên do hệ thống tự đặt">✨ </span>}
                           {job.title || "Không có tiêu đề"}
                         </span>
@@ -338,9 +335,6 @@ export default function JobHistory({
                         <span className="sr-only">Đổi tên</span>
                       </button>
                     )}
-                    <p className="truncate text-base text-muted-foreground">
-                      {job.fileName}
-                    </p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-muted-foreground">
                       <span>{formatDate(job.createdAt)}</span>
                       <Badge
