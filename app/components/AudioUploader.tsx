@@ -22,7 +22,7 @@ const client = generateClient<Schema>({ authMode: "iam" });
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
 interface AudioUploaderProps {
-  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string) => void;
+  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string, title: string) => void;
 }
 
 const getAudioDuration = (file: File): Promise<number> =>
@@ -114,7 +114,7 @@ export default function AudioUploader({
           audioDurationSeconds,
         });
 
-        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key);
+        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key, jobTitle);
         setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");

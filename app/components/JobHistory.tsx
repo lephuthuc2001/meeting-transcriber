@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { generateClient } from "aws-amplify/data";
-import { getUrl } from "aws-amplify/storage";
+import { getUrl, downloadData } from "aws-amplify/storage";
 import type { Schema } from "@/amplify/data/resource";
 import {
   Search,
@@ -35,6 +35,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { JobStatus } from "@/lib/types";
+import { downloadReportDoc } from "@/lib/downloadReport";
 import outputs from "@/amplify_outputs.json";
 
 const client = generateClient<Schema>({ authMode: "iam" });
@@ -58,9 +59,11 @@ const STATUS_COLORS: Record<JobStatus, string> = {
   FAILED: "bg-red-100 text-red-900 border-red-300",
 };
 
+export type HistoryJob = Schema["MeetingJob"]["type"];
+
 interface JobHistoryProps {
   refreshKey: number;
-  onViewReport: (jobId: string, reportKey: string) => Promise<void>;
+  onViewReport: (job: HistoryJob) => Promise<void>;
 }
 
 export default function JobHistory({
@@ -75,6 +78,7 @@ export default function JobHistory({
   const [deleteTarget, setDeleteTarget] = useState<Schema["MeetingJob"]["type"] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const fetchJobs = useCallback(async () => {
@@ -108,12 +112,27 @@ export default function JobHistory({
     }
   };
 
-  const handleViewReport = async (jobId: string, reportKey: string) => {
-    setViewingId(jobId);
+  const handleViewReport = async (job: HistoryJob) => {
+    setViewingId(job.id);
     try {
-      await onViewReport(jobId, reportKey);
+      await onViewReport(job);
     } finally {
       setViewingId(null);
+    }
+  };
+
+  const handleDownloadReport = async (job: HistoryJob) => {
+    setDownloadingId(job.id);
+    try {
+      const { body } = await downloadData({ path: job.reportKey ?? "" }).result;
+      const text = await body.text();
+      downloadReportDoc(text, job.title, new Date(job.createdAt));
+      toast.success("Đã tải biên bản về thư mục Tải về (Downloads)");
+    } catch (err) {
+      console.error("Lỗi khi tải biên bản:", err);
+      toast.error("Không thể tải biên bản. Vui lòng thử lại.");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -275,28 +294,43 @@ export default function JobHistory({
 
                   <div className="flex flex-wrap items-center gap-2">
                     {status === "COMPLETED" && (
-                      <Button
-                        onClick={() => handleViewReport(job.id, job.reportKey ?? "")}
-                        disabled={viewingId === job.id}
-                      >
-                        {viewingId === job.id ? (
-                          <>
+                      <>
+                        <Button
+                          onClick={() => handleDownloadReport(job)}
+                          disabled={downloadingId === job.id}
+                        >
+                          {downloadingId === job.id ? (
+                            <>
+                              <Loader2 className="size-4 animate-spin" />
+                              Đang tải...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="size-4" />
+                              Tải biên bản (Word)
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleViewReport(job)}
+                          disabled={viewingId === job.id}
+                        >
+                          {viewingId === job.id ? (
                             <Loader2 className="size-4 animate-spin" />
-                            Đang tải...
-                          </>
-                        ) : (
-                          <>
+                          ) : (
                             <FileText className="size-4" />
-                            Xem biên bản
-                          </>
-                        )}
-                      </Button>
+                          )}
+                          Xem / sửa
+                        </Button>
+                      </>
                     )}
                     <Button
-                      variant="outline"
+                      variant="ghost"
+                      className="text-muted-foreground"
                       onClick={() => handleDownloadAudio(job.audioKey)}
                     >
-                      <Download className="size-4" />
+                      <FileAudio className="size-4" />
                       Tải âm thanh
                     </Button>
                     {(status === "COMPLETED" || status === "FAILED") && (
