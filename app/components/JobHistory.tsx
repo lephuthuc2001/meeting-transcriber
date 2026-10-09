@@ -11,6 +11,10 @@ import {
   Clock,
   Trash2,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,14 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +40,8 @@ import outputs from "@/amplify_outputs.json";
 const client = generateClient<Schema>({ authMode: "iam" });
 const apiUrl = (outputs as any).custom?.apiUrl;
 
+const PAGE_SIZE = 5;
+
 const STATUS_LABELS: Record<JobStatus, string> = {
   UPLOADING: "Đang tải lên",
   TRANSCRIBING: "Đang chuyển đổi",
@@ -53,11 +51,11 @@ const STATUS_LABELS: Record<JobStatus, string> = {
 };
 
 const STATUS_COLORS: Record<JobStatus, string> = {
-  UPLOADING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  TRANSCRIBING: "bg-blue-100 text-blue-800 border-blue-200",
-  PROCESSING: "bg-purple-100 text-purple-800 border-purple-200",
-  COMPLETED: "bg-green-100 text-green-800 border-green-200",
-  FAILED: "bg-red-100 text-red-800 border-red-200",
+  UPLOADING: "bg-amber-100 text-amber-900 border-amber-300",
+  TRANSCRIBING: "bg-blue-100 text-blue-900 border-blue-300",
+  PROCESSING: "bg-indigo-100 text-indigo-900 border-indigo-300",
+  COMPLETED: "bg-green-100 text-green-900 border-green-300",
+  FAILED: "bg-red-100 text-red-900 border-red-300",
 };
 
 interface JobHistoryProps {
@@ -77,6 +75,7 @@ export default function JobHistory({
   const [deleteTarget, setDeleteTarget] = useState<Schema["MeetingJob"]["type"] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -161,6 +160,15 @@ export default function JobHistory({
     );
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedJobs = filteredJobs.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+  const rangeStart = filteredJobs.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filteredJobs.length);
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("vi-VN", {
       year: "numeric",
@@ -174,137 +182,170 @@ export default function JobHistory({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Clock className="size-5" />
+        <CardTitle className="flex items-center gap-3 text-2xl">
+          <Clock className="size-6 text-primary" aria-hidden="true" />
           Lịch sử cuộc họp
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
-            placeholder="Tìm kiếm cuộc họp..."
+            aria-label="Tìm kiếm cuộc họp"
+            placeholder="Tìm theo tên cuộc họp hoặc tên tệp..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="pl-11"
           />
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="flex items-center justify-center py-10">
+            <div className="size-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <FileAudio className="size-12 mb-3 opacity-40" />
-            <p className="text-sm">
+            <FileAudio className="size-14 mb-3 opacity-50" aria-hidden="true" />
+            <p className="text-lg">
               {search ? "Không tìm thấy cuộc họp nào." : "Chưa có cuộc họp nào"}
             </p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tên cuộc họp</TableHead>
-                <TableHead>Tên tệp</TableHead>
-                <TableHead>Ngày tạo</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Hành động</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredJobs.map((job) => {
-                const status = (job.status as JobStatus) || "UPLOADING";
-                return (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-medium max-w-[200px]">
-                      {editingId === job.id ? (
-                        <Input
-                          autoFocus
-                          value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
-                          onBlur={() => handleTitleSave(job.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleTitleSave(job.id);
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                          className="h-7 text-sm"
-                        />
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:underline truncate block"
-                          title="Nhấp để đổi tên"
-                          onClick={() => {
-                            setEditingId(job.id);
-                            setEditingTitle(job.title ?? "");
-                          }}
-                        >
+          <ul className="space-y-3">
+            {pagedJobs.map((job) => {
+              const status = (job.status as JobStatus) || "UPLOADING";
+              return (
+                <li
+                  key={job.id}
+                  className="rounded-xl border bg-card p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    {editingId === job.id ? (
+                      <Input
+                        autoFocus
+                        aria-label="Tên cuộc họp"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => handleTitleSave(job.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleTitleSave(job.id);
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className="group flex max-w-full cursor-pointer items-center gap-2 text-left text-lg font-semibold hover:text-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded"
+                        title="Nhấn để đổi tên"
+                        onClick={() => {
+                          setEditingId(job.id);
+                          setEditingTitle(job.title ?? "");
+                        }}
+                      >
+                        <span className="truncate">
                           {job.title || "Không có tiêu đề"}
                         </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="max-w-[150px] truncate text-muted-foreground">
+                        <Pencil
+                          className="size-4 shrink-0 text-muted-foreground group-hover:text-primary"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">Đổi tên</span>
+                      </button>
+                    )}
+                    <p className="truncate text-base text-muted-foreground">
                       {job.fileName}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(job.createdAt)}
-                    </TableCell>
-                    <TableCell>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-muted-foreground">
+                      <span>{formatDate(job.createdAt)}</span>
                       <Badge
                         variant="outline"
-                        className={STATUS_COLORS[status]}
+                        className={`text-sm px-3 py-0.5 ${STATUS_COLORS[status]}`}
                       >
                         {STATUS_LABELS[status] || status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDownloadAudio(job.audioKey)}
-                          title="Tải âm thanh"
-                        >
-                          <Download className="size-4" />
-                          <span className="hidden sm:inline ml-1">
-                            Tải âm thanh
-                          </span>
-                        </Button>
-                        {status === "COMPLETED" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewReport(job.id, job.reportKey ?? "")}
-                            disabled={viewingId === job.id}
-                          >
-                            {viewingId === job.id ? (
-                              <>
-                                <Loader2 className="size-3 animate-spin" />
-                                Đang tải...
-                              </>
-                            ) : (
-                              "Xem biên bản"
-                            )}
-                          </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {status === "COMPLETED" && (
+                      <Button
+                        onClick={() => handleViewReport(job.id, job.reportKey ?? "")}
+                        disabled={viewingId === job.id}
+                      >
+                        {viewingId === job.id ? (
+                          <>
+                            <Loader2 className="size-4 animate-spin" />
+                            Đang tải...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="size-4" />
+                            Xem biên bản
+                          </>
                         )}
-                        {(status === "COMPLETED" || status === "FAILED") && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            aria-label="Xóa cuộc họp"
-                            title="Xóa cuộc họp"
-                            onClick={() => setDeleteTarget(job)}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownloadAudio(job.audioKey)}
+                    >
+                      <Download className="size-4" />
+                      Tải âm thanh
+                    </Button>
+                    {(status === "COMPLETED" || status === "FAILED") && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label="Xóa cuộc họp"
+                        title="Xóa cuộc họp"
+                        onClick={() => setDeleteTarget(job)}
+                      >
+                        <Trash2 className="size-5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {!loading && filteredJobs.length > PAGE_SIZE && (
+          <nav
+            aria-label="Phân trang lịch sử cuộc họp"
+            className="flex flex-col items-center gap-3 border-t pt-4 sm:flex-row sm:justify-between"
+          >
+            <p className="text-base text-muted-foreground" aria-live="polite">
+              Hiển thị {rangeStart}–{rangeEnd} / {filteredJobs.length} cuộc họp
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="size-4" />
+                Trước
+              </Button>
+              <span className="min-w-24 text-center text-base font-medium">
+                Trang {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Sau
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </nav>
         )}
       </CardContent>
 

@@ -97,7 +97,7 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto rounded-md border bg-white p-6">
-          <pre className="text-sm font-mono whitespace-pre-wrap break-words">{report}</pre>
+          <pre className="text-base leading-7 font-serif whitespace-pre-wrap break-words">{report}</pre>
         </div>
 
         {/* Feedback section */}
@@ -133,7 +133,7 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
         </div>
 
         {copied && (
-          <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 rounded-md px-3 py-2">
+          <div className="flex items-center gap-2 text-base text-green-800 bg-green-50 rounded-md px-3 py-2">
             <CheckCircle className="size-4" />
             Đã sao chép! Dán vào Word để xem định dạng.
           </div>
@@ -144,11 +144,11 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
             <Copy className="size-4 mr-2" />
             Sao chép nội dung
           </Button>
-          <Button variant="outline" onClick={handleDownloadDoc} disabled={regenerating}>
+          <Button onClick={handleDownloadDoc} disabled={regenerating}>
             <Download className="size-4 mr-2" />
             Tải Word (.doc)
           </Button>
-          <Button onClick={onClose}>Đóng</Button>
+          <Button variant="secondary" onClick={onClose}>Đóng</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

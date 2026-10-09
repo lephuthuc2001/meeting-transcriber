@@ -160,8 +160,8 @@ export default function AudioUploader({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Upload className="size-5" />
+        <CardTitle className="flex items-center gap-3 text-2xl">
+          <Upload className="size-6 text-primary" aria-hidden="true" />
           Tải lên bản ghi âm mới
         </CardTitle>
         <CardDescription>
@@ -170,10 +170,11 @@ export default function AudioUploader({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <label className="text-sm font-medium mb-1.5 block">
+          <label htmlFor="meeting-title" className="text-base font-medium mb-2 block">
             Tên cuộc họp (không bắt buộc)
           </label>
           <Input
+            id="meeting-title"
             type="text"
             placeholder="Ví dụ: Họp ban giám đốc ngày 08/03"
             value={title}
@@ -183,10 +184,10 @@ export default function AudioUploader({
         </div>
 
         <div
-          className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
+          className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 transition-colors cursor-pointer ${
             isDragOver
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-primary/50"
+              ? "border-primary bg-primary/10"
+              : "border-primary/40 bg-secondary/40 hover:border-primary hover:bg-secondary/70"
           } ${uploading ? "opacity-80" : ""}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -204,15 +205,15 @@ export default function AudioUploader({
 
           {uploading ? (
             <div className="flex flex-col items-center gap-3 w-full">
-              <FileAudio className="size-10 text-primary animate-pulse" />
-              <p className="text-sm font-medium">Đang tải lên...</p>
-              <div className="w-full max-w-xs bg-muted rounded-full h-2.5">
+              <FileAudio className="size-12 text-primary animate-pulse" />
+              <p className="text-lg font-medium">Đang tải lên...</p>
+              <div className="w-full max-w-xs bg-muted rounded-full h-3">
                 <div
-                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                  className="bg-primary h-3 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">{progress}%</p>
+              <p className="text-base text-muted-foreground">{progress}%</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -227,11 +228,14 @@ export default function AudioUploader({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <FileAudio className="size-10 text-muted-foreground" />
-              <p className="text-sm font-medium text-center">
-                Kéo thả tệp âm thanh vào đây hoặc nhấn để chọn
+              <FileAudio className="size-14 text-primary" aria-hidden="true" />
+              <p className="text-xl font-semibold text-center">
+                Nhấn vào đây để chọn tệp ghi âm
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-base text-center text-muted-foreground">
+                hoặc kéo thả tệp vào khung này
+              </p>
+              <p className="text-sm text-muted-foreground">
                 Định dạng hỗ trợ: .m4a, .mp3, .wav, .mp4, .flac
               </p>
             </div>
@@ -240,7 +244,7 @@ export default function AudioUploader({
 
         {error && (
           <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
-            <p className="text-sm text-destructive">{error}</p>
+            <p role="alert" className="text-base text-destructive">{error}</p>
           </div>
         )}
       </CardContent>
