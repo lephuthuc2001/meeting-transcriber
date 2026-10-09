@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { uploadData, type UploadDataWithPathOutput } from "aws-amplify/storage";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
-import { Upload, FileAudio } from "lucide-react";
+import { Upload, FileAudio, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,6 +44,7 @@ export default function AudioUploader({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTaskRef = useRef<UploadDataWithPathOutput | null>(null);
 
@@ -58,7 +59,16 @@ export default function AudioUploader({
         return;
       }
 
+      const ext = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
+      if (!ACCEPTED_FORMATS.split(",").includes(ext)) {
+        setError(
+          `Định dạng "${ext}" chưa được hỗ trợ. Vui lòng chọn tệp ${ACCEPTED_FORMATS.replaceAll(",", ", ")}.`
+        );
+        return;
+      }
+
       setUploading(true);
+      setFileName(file.name);
       setProgress(0);
       setError(null);
 
@@ -112,6 +122,7 @@ export default function AudioUploader({
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");
       } finally {
         setUploading(false);
+        setFileName(null);
         setProgress(0);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -125,6 +136,7 @@ export default function AudioUploader({
     uploadTaskRef.current?.cancel();
     uploadTaskRef.current = null;
     setUploading(false);
+    setFileName(null);
     setProgress(0);
     setError(null);
     if (fileInputRef.current) {
@@ -141,10 +153,11 @@ export default function AudioUploader({
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragOver(false);
+      if (uploading) return;
       const file = e.dataTransfer.files?.[0];
       if (file) handleUpload(file);
     },
-    [handleUpload]
+    [handleUpload, uploading]
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -157,41 +170,61 @@ export default function AudioUploader({
     setIsDragOver(false);
   };
 
+  const openPicker = () => {
+    if (!uploading) fileInputRef.current?.click();
+  };
+
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Upload className="size-5" />
+        <CardTitle className="font-serif text-xl">
           Tải lên bản ghi âm mới
         </CardTitle>
         <CardDescription>
-          Tải lên tệp âm thanh cuộc họp để tạo biên bản tự động
+          Hỗ trợ cuộc họp tiếng Việt, tối đa 10 người phát biểu.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-1.5 block">
-            Tên cuộc họp (không bắt buộc)
+      <CardContent className="space-y-5">
+        <div className="space-y-1.5">
+          <label htmlFor="meeting-title" className="text-sm font-medium">
+            Tên cuộc họp{" "}
+            <span className="font-normal text-muted-foreground">
+              (không bắt buộc)
+            </span>
           </label>
           <Input
+            id="meeting-title"
             type="text"
-            placeholder="Ví dụ: Họp ban giám đốc ngày 08/03"
+            placeholder="Ví dụ: Sinh hoạt Chi bộ tháng 10/2025"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={uploading}
+            maxLength={120}
           />
         </div>
 
         <div
-          className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
-            isDragOver
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-primary/50"
-          } ${uploading ? "opacity-80" : ""}`}
+          role="button"
+          tabIndex={uploading ? -1 : 0}
+          aria-disabled={uploading}
+          aria-label="Chọn hoặc kéo thả tệp âm thanh"
+          className={`group relative flex min-h-56 flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+            uploading
+              ? "cursor-default border-primary/40 bg-primary/5"
+              : isDragOver
+                ? "cursor-copy border-primary bg-primary/10"
+                : "cursor-pointer border-input bg-secondary/50 hover:border-primary/60 hover:bg-primary/5"
+          }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => !uploading && fileInputRef.current?.click()}
+          onClick={openPicker}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openPicker();
+            }
+          }}
         >
           <input
             ref={fileInputRef}
@@ -200,19 +233,39 @@ export default function AudioUploader({
             onChange={handleFileChange}
             className="hidden"
             disabled={uploading}
+            tabIndex={-1}
+            aria-hidden="true"
           />
 
           {uploading ? (
-            <div className="flex flex-col items-center gap-3 w-full">
-              <FileAudio className="size-10 text-primary animate-pulse" />
-              <p className="text-sm font-medium">Đang tải lên...</p>
-              <div className="w-full max-w-xs bg-muted rounded-full h-2.5">
+            <div
+              className="flex w-full max-w-sm flex-col items-center gap-3"
+              role="status"
+              aria-live="polite"
+            >
+              <FileAudio
+                className="size-10 text-primary motion-safe:animate-pulse"
+                aria-hidden="true"
+              />
+              <p className="max-w-full truncate text-sm font-medium">
+                {fileName ?? "Đang tải lên..."}
+              </p>
+              <div
+                className="h-2.5 w-full overflow-hidden rounded-full bg-muted"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+                aria-label="Tiến độ tải lên"
+              >
                 <div
-                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                  className="h-full rounded-full bg-primary transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">{progress}%</p>
+              <p className="text-xs tabular-nums text-muted-foreground">
+                Đang tải lên… {progress}%
+              </p>
               <Button
                 variant="outline"
                 size="sm"
@@ -220,26 +273,52 @@ export default function AudioUploader({
                   e.stopPropagation();
                   handleCancel();
                 }}
-                className="mt-1"
               >
-                Hủy
+                Hủy tải lên
               </Button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2">
-              <FileAudio className="size-10 text-muted-foreground" />
-              <p className="text-sm font-medium text-center">
-                Kéo thả tệp âm thanh vào đây hoặc nhấn để chọn
+            <div className="flex flex-col items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-105"
+              >
+                <Upload className="size-6" />
+              </span>
+              <p className="text-base font-semibold">
+                {isDragOver
+                  ? "Thả tệp để bắt đầu"
+                  : "Kéo thả tệp âm thanh vào đây"}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Định dạng hỗ trợ: .m4a, .mp3, .wav, .mp4, .flac
+              <p className="text-sm text-muted-foreground">
+                hoặc{" "}
+                <span className="font-medium text-primary underline underline-offset-4">
+                  chọn tệp từ máy tính
+                </span>
               </p>
+              <ul className="mt-1 flex flex-wrap justify-center gap-1.5" aria-label="Định dạng hỗ trợ">
+                {ACCEPTED_FORMATS.split(",").map((f) => (
+                  <li
+                    key={f}
+                    className="rounded-md border bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                  >
+                    {f}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
 
         {error && (
-          <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-3"
+          >
+            <AlertCircle
+              className="mt-0.5 size-4 shrink-0 text-destructive"
+              aria-hidden="true"
+            />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
