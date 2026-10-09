@@ -5,6 +5,7 @@ import {
   StartTranscriptionJobCommand,
   MediaFormat,
 } from "@aws-sdk/client-transcribe";
+import { createMeetingJob, deleteMeetingJob } from "../shared/meetingJob";
 
 const transcribeClient = new TranscribeClient();
 const BUCKET_NAME = process.env.BUCKET_NAME!;
@@ -42,7 +43,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const { s3Key, title, fileName } = body;
+    const { s3Key, title, fileName, audioDurationSeconds } = body;
 
     if (!s3Key || !title || !fileName) {
       return {
@@ -56,22 +57,39 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     const jobId = randomUUID();
 
-    await transcribeClient.send(
-      new StartTranscriptionJobCommand({
-        TranscriptionJobName: jobId,
-        LanguageCode: "vi-VN",
-        MediaFormat: getMediaFormat(fileName),
-        Media: {
-          MediaFileUri: `s3://${BUCKET_NAME}/${s3Key}`,
-        },
-        OutputBucketName: BUCKET_NAME,
-        OutputKey: `transcripts/${jobId}.json`,
-        Settings: {
-          ShowSpeakerLabels: true,
-          MaxSpeakerLabels: 10,
-        },
-      })
-    );
+    // Row first, so the history entry exists even if the browser goes away
+    // the moment this request returns.
+    await createMeetingJob({
+      id: jobId,
+      title,
+      audioKey: s3Key,
+      fileName,
+      ...(Number.isFinite(audioDurationSeconds) && {
+        audioDurationSeconds: Math.round(audioDurationSeconds),
+      }),
+    });
+
+    try {
+      await transcribeClient.send(
+        new StartTranscriptionJobCommand({
+          TranscriptionJobName: jobId,
+          LanguageCode: "vi-VN",
+          MediaFormat: getMediaFormat(fileName),
+          Media: {
+            MediaFileUri: `s3://${BUCKET_NAME}/${s3Key}`,
+          },
+          OutputBucketName: BUCKET_NAME,
+          OutputKey: `transcripts/${jobId}.json`,
+          Settings: {
+            ShowSpeakerLabels: true,
+            MaxSpeakerLabels: 10,
+          },
+        })
+      );
+    } catch (err) {
+      await deleteMeetingJob(jobId).catch(() => {});
+      throw err;
+    }
 
     return {
       statusCode: 200,

@@ -54,10 +54,11 @@ s3Bucket.addEventNotification(
   { prefix: "transcripts/", suffix: ".json" }
 );
 
-// Lambdas own the MeetingJob status (the browser only creates the row), so
-// the history list stays correct when nobody is watching.
+// Lambdas create the MeetingJob row and own its status, so the history list
+// stays correct when nobody is watching.
 const meetingJobTable = backend.data.resources.tables["MeetingJob"];
 for (const lambdaFn of [
+  backend.startTranscription.resources.lambda,
   backend.checkStatus.resources.lambda,
   backend.processTranscript.resources.lambda,
   backend.processTranscriptWorker.resources.lambda,

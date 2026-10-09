@@ -1,14 +1,15 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
+  DeleteCommand,
   DynamoDBDocumentClient,
   GetCommand,
+  PutCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
-// Backend-owned status for the MeetingJob row the browser creates in
-// AudioUploader. Writes are conditional on the row existing: if the browser
-// died before creating it, the report still lands in S3, we just don't
-// invent a history row without a title.
+// The MeetingJob table behind the Amplify Data model. Lambdas write it
+// directly (bypassing AppSync), so rows must carry the same fields AppSync
+// would add: __typename, createdAt, updatedAt.
 
 const docClient = DynamoDBDocumentClient.from(new DynamoDBClient());
 const TABLE_NAME = process.env.MEETING_JOB_TABLE_NAME!;
@@ -36,6 +37,38 @@ export async function getMeetingJob(
   return Item as MeetingJobRow | undefined;
 }
 
+export async function createMeetingJob(job: {
+  id: string;
+  title: string;
+  audioKey: string;
+  fileName: string;
+  audioDurationSeconds?: number;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  await docClient.send(
+    new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        __typename: "MeetingJob",
+        ...job,
+        status: "TRANSCRIBING",
+        createdAt: now,
+        updatedAt: now,
+      },
+      ConditionExpression: "attribute_not_exists(id)",
+    })
+  );
+}
+
+export async function deleteMeetingJob(jobId: string): Promise<void> {
+  await docClient.send(
+    new DeleteCommand({ TableName: TABLE_NAME, Key: { id: jobId } })
+  );
+}
+
+// Conditional on the row existing, so a row deleted by the user (or a job
+// started before rows were created server-side) isn't resurrected without
+// its title and audio key.
 export async function setMeetingJobStatus(
   jobId: string,
   status: JobStatus,
