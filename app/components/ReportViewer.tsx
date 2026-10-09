@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Download, CheckCircle, RefreshCw } from "lucide-react";
+import { Download, FileText, RefreshCw, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,10 +10,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { buildResolutionDoc } from "@/lib/resolutionDoc";
+import { downloadReportDoc } from "@/lib/downloadReport";
 import outputs from "@/amplify_outputs.json";
 
 const apiUrl = (outputs as any).custom?.apiUrl;
@@ -21,33 +20,29 @@ const apiUrl = (outputs as any).custom?.apiUrl;
 interface ReportViewerProps {
   report: string;
   jobId: string;
+  title?: string | null;
+  createdAt?: string | null;
   onClose: () => void;
 }
 
-export default function ReportViewer({ report: initialReport, jobId, onClose }: ReportViewerProps) {
+export default function ReportViewer({
+  report: initialReport,
+  jobId,
+  title,
+  createdAt,
+  onClose,
+}: ReportViewerProps) {
   const [report, setReport] = useState(initialReport);
-  const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState<string | null>(null);
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(report);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
-  };
+  const date = createdAt ? new Date(createdAt) : new Date();
 
   const handleDownloadDoc = () => {
-    const wordContent = buildResolutionDoc(report);
-    const blob = new Blob(["\ufeff", wordContent], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `nghi-quyet-chi-bo-${new Date().toISOString().slice(0, 10)}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadReportDoc(report, title, date);
+    setDownloaded(true);
   };
 
   const handleRegenerate = async () => {
@@ -72,7 +67,8 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
           if (statusData.reportReady && statusData.report) {
             setReport(statusData.report);
             setFeedback("");
-            toast.success("Đã tạo lại biên bản thành công!");
+            setDownloaded(false);
+            toast.success("Đã tạo lại biên bản. Hãy tải lại tệp Word mới.");
             return;
           }
         }
@@ -88,68 +84,81 @@ export default function ReportViewer({ report: initialReport, jobId, onClose }: 
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto gap-6">
         <DialogHeader>
-          <DialogTitle>Biên bản cuộc họp</DialogTitle>
-          <DialogDescription>
-            Xem, sao chép hoặc tải xuống biên bản cuộc họp
+          <DialogTitle className="text-2xl">Biên bản đã sẵn sàng</DialogTitle>
+          <DialogDescription className="text-base">
+            Tải tệp Word về máy, sau đó mở để kiểm tra nội dung.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto rounded-md border bg-white p-6">
-          <pre className="text-base leading-7 font-serif whitespace-pre-wrap break-words">{report}</pre>
+        <div className="flex items-center gap-4 rounded-xl border bg-secondary/50 p-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-white text-primary border">
+            <FileText className="size-6" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-lg font-semibold">
+              {title || "Nghị quyết Chi bộ"}
+            </p>
+            <p className="text-base text-muted-foreground">
+              {date.toLocaleDateString("vi-VN")}
+            </p>
+          </div>
         </div>
 
-        {/* Feedback section */}
-        <div className="space-y-2 pt-2">
+        <div className="space-y-3">
+          <Button
+            size="lg"
+            className="h-16 w-full text-lg font-semibold [&_svg:not([class*='size-'])]:size-6"
+            onClick={handleDownloadDoc}
+            disabled={regenerating}
+          >
+            <Download />
+            Tải biên bản (Word)
+          </Button>
+          {downloaded ? (
+            <p
+              role="status"
+              className="flex items-center justify-center gap-2 text-base text-green-800"
+            >
+              <CheckCircle className="size-5" aria-hidden="true" />
+              Đã tải xong. Mở thư mục Tải về (Downloads) để xem tệp.
+            </p>
+          ) : (
+            <p className="text-center text-base text-muted-foreground">
+              Tệp sẽ được lưu vào thư mục Tải về (Downloads).
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-3 border-t pt-5">
+          <label htmlFor="regen-feedback" className="block text-lg font-semibold">
+            Cần sửa nội dung?
+          </label>
+          <p className="text-base text-muted-foreground">
+            Ghi rõ phần cần sửa, hệ thống sẽ viết lại biên bản (mất khoảng 1–2 phút).
+          </p>
           <Textarea
-            placeholder="Nhận xét / yêu cầu chỉnh sửa... (ví dụ: Phần II thiếu chi tiết về công tác thu phí)"
+            id="regen-feedback"
+            placeholder="Ví dụ: Phần II thiếu chi tiết về công tác thu phí"
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             rows={3}
             disabled={regenerating}
           />
           {regenError && (
-            <p className="text-sm text-destructive">{regenError}</p>
+            <p role="alert" className="text-base text-destructive">{regenError}</p>
           )}
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={handleRegenerate}
             disabled={!feedback.trim() || regenerating || !jobId}
             className="w-full"
           >
-            {regenerating ? (
-              <>
-                <RefreshCw className="size-4 mr-2 animate-spin" />
-                Đang tạo lại...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="size-4 mr-2" />
-                Tạo lại biên bản
-              </>
-            )}
+            <RefreshCw className={regenerating ? "animate-spin" : undefined} />
+            {regenerating ? "Đang viết lại biên bản..." : "Viết lại biên bản"}
           </Button>
         </div>
-
-        {copied && (
-          <div className="flex items-center gap-2 text-base text-green-800 bg-green-50 rounded-md px-3 py-2">
-            <CheckCircle className="size-4" />
-            Đã sao chép! Dán vào Word để xem định dạng.
-          </div>
-        )}
-
-        <DialogFooter className="flex-wrap gap-2">
-          <Button variant="outline" onClick={handleCopy} disabled={regenerating}>
-            <Copy className="size-4 mr-2" />
-            Sao chép nội dung
-          </Button>
-          <Button onClick={handleDownloadDoc} disabled={regenerating}>
-            <Download className="size-4 mr-2" />
-            Tải Word (.doc)
-          </Button>
-          <Button variant="secondary" onClick={onClose}>Đóng</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -22,7 +22,7 @@ const client = generateClient<Schema>({ authMode: "iam" });
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
 interface AudioUploaderProps {
-  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string) => void;
+  onTranscriptionStarted: (jobId: string, audioDurationSeconds: number, audioKey: string, title: string) => void;
 }
 
 const getAudioDuration = (file: File): Promise<number> =>
@@ -95,18 +95,19 @@ export default function AudioUploader({
         }
 
         const data = await response.json();
+        const meetingTitle = title || file.name.replace(/\.[^/.]+$/, "");
 
         // Create DynamoDB record for job history
         await client.models.MeetingJob.create({
           id: data.jobId,
-          title: title || file.name.replace(/\.[^/.]+$/, ""),
+          title: meetingTitle,
           status: "TRANSCRIBING",
           audioKey: s3Key,
           fileName: file.name,
           audioDurationSeconds,
         });
 
-        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key);
+        onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key, meetingTitle);
         setTitle("");
       } catch (err: any) {
         setError(err.message || "Đã xảy ra lỗi khi tải lên.");
