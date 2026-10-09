@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import { setMeetingJobStatus } from "../shared/meetingJob";
 
 const s3Client = new S3Client();
 const lambdaClient = new LambdaClient();
@@ -58,6 +59,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         })
       );
     }
+
+    // After the delete, so check-status can't see the old report and flip
+    // the row back to COMPLETED
+    await setMeetingJobStatus(jobId, "PROCESSING");
 
     // Invoke worker asynchronously (fire-and-forget — no API Gateway timeout risk)
     await lambdaClient.send(

@@ -2,8 +2,6 @@
 
 import { useState, useRef, useCallback } from "react";
 import { uploadData, type UploadDataWithPathOutput } from "aws-amplify/storage";
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
 import { Upload, FileAudio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +15,6 @@ import {
 import outputs from "@/amplify_outputs.json";
 
 const apiUrl = (outputs as any).custom?.apiUrl;
-const client = generateClient<Schema>({ authMode: "iam" });
 
 const ACCEPTED_FORMATS = ".m4a,.mp3,.wav,.mp4,.flac";
 
@@ -93,7 +90,9 @@ export default function AudioUploader({
           body: JSON.stringify({
             s3Key,
             title: jobTitle,
+            autoTitle: !trimmedTitle,
             fileName: file.name,
+            audioDurationSeconds,
           }),
         });
 
@@ -101,18 +100,8 @@ export default function AudioUploader({
           throw new Error("Không thể bắt đầu chuyển đổi. Vui lòng thử lại.");
         }
 
+        // /transcribe also creates the MeetingJob history row
         const data = await response.json();
-
-        // Create DynamoDB record for job history
-        await client.models.MeetingJob.create({
-          id: data.jobId,
-          title: jobTitle,
-          autoTitle: !trimmedTitle,
-          status: "TRANSCRIBING",
-          audioKey: s3Key,
-          fileName: file.name,
-          audioDurationSeconds,
-        });
 
         onTranscriptionStarted(data.jobId, audioDurationSeconds, s3Key, jobTitle);
         setTitle("");

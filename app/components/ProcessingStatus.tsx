@@ -11,6 +11,8 @@ import outputs from "@/amplify_outputs.json";
 const apiUrl = (outputs as any).custom?.apiUrl;
 const client = generateClient<Schema>({ authMode: "iam" });
 
+const TRIGGER_GRACE_MS = 60_000;
+
 interface ProcessingStatusProps {
   jobId: string;
   audioKey: string;
@@ -54,6 +56,7 @@ export default function ProcessingStatus({
   const [cancelling, setCancelling] = useState(false);
   const hasTriggeredProcess = useRef(false);
   const hasCompleted = useRef(false);
+  const transcriptReadyAt = useRef<number | null>(null);
   const phaseStartRef = useRef<number>(Date.now());
 
   const handleCancel = async () => {
@@ -91,65 +94,48 @@ export default function ProcessingStatus({
 
         const data = await res.json();
 
+        // The backend drives the pipeline and owns the MeetingJob status;
+        // this loop only reflects it.
         if (data.status === "FAILED") {
           setPhase("failed");
           const msg = data.errorMessage || "Đã xảy ra lỗi không xác định.";
           setErrorMessage(msg);
-          await client.models.MeetingJob.update({
-            id: jobId,
-            status: "FAILED",
-            errorMessage: msg,
-          });
           onError(msg);
           return;
         }
 
-        if (
-          data.status === "COMPLETED" &&
-          data.reportReady &&
-          !hasCompleted.current
-        ) {
+        if (data.reportReady && !hasCompleted.current) {
           hasCompleted.current = true;
           setPhase("completed");
-          await client.models.MeetingJob.update({
-            id: jobId,
-            status: "COMPLETED",
-            reportKey: `reports/${jobId}.txt`,
-          });
-          let finalTitle: string | undefined;
-          if (data.title) {
-            // Only replace placeholder titles, never a name the user typed
-            const { data: job } = await client.models.MeetingJob.get({ id: jobId });
-            if (job?.autoTitle) {
-              await client.models.MeetingJob.update({ id: jobId, title: data.title });
-              finalTitle = data.title;
-            }
-          }
-          onComplete(data.report, finalTitle);
-          return;
-        }
-
-        if (
-          data.status === "COMPLETED" &&
-          !data.reportReady &&
-          !hasTriggeredProcess.current
-        ) {
-          hasTriggeredProcess.current = true;
-          setPhase("processing");
-
-          const processRes = await fetch(`${apiUrl}/process`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jobId }),
-          });
-
-          // /process now returns 202 immediately — worker runs async.
-          // Polling loop will detect reportReady: true when worker finishes.
+          // The worker already applied the AI title to the row; check-status
+          // only returns it when it replaced a placeholder
+          onComplete(data.report, data.title);
           return;
         }
 
         if (data.status === "PROCESSING") {
           setPhase("processing");
+          return;
+        }
+
+        if (data.status === "COMPLETED" && !data.reportReady) {
+          // Transcript is ready; the S3 trigger should start the worker
+          // within seconds. Only call /process ourselves if it hasn't —
+          // e.g. a job transcribed before the trigger was deployed.
+          setPhase("processing");
+          transcriptReadyAt.current ??= Date.now();
+          if (
+            !hasTriggeredProcess.current &&
+            Date.now() - transcriptReadyAt.current > TRIGGER_GRACE_MS
+          ) {
+            const processRes = await fetch(`${apiUrl}/process`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ jobId }),
+            });
+            // Only latch on success so a failed call is retried next poll
+            if (processRes.ok) hasTriggeredProcess.current = true;
+          }
         }
       } catch (err: any) {
         // Silently continue polling on transient errors

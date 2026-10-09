@@ -71,6 +71,11 @@ export default function ReportViewer({
             toast.success("Đã tạo lại biên bản. Hãy tải lại tệp Word mới.");
             return;
           }
+          if (statusData.status === "FAILED") {
+            throw new Error(
+              statusData.errorMessage || "Tạo lại biên bản thất bại."
+            );
+          }
         }
       }
       throw new Error("Quá thời gian chờ. Vui lòng thử lại.");

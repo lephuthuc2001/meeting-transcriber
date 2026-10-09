@@ -2,6 +2,8 @@ import { defineBackend } from "@aws-amplify/backend";
 import { Policy, PolicyStatement, Effect } from "aws-cdk-lib/aws-iam";
 import { Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import { EventType } from "aws-cdk-lib/aws-s3";
+import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
 import { auth } from "./auth/resource.js";
 import { data } from "./data/resource.js";
 import { storage } from "./storage/resource.js";
@@ -41,6 +43,31 @@ const lambdaResources = [
 for (const lambdaFn of lambdaResources) {
   s3Bucket.grantReadWrite(lambdaFn);
   (lambdaFn as LambdaFunction).addEnvironment("BUCKET_NAME", bucketName);
+}
+
+// Transcribe writes transcripts/{jobId}.json when a job completes; that
+// object kicks off report generation server-side, so it no longer depends
+// on a browser tab being open to call /process.
+s3Bucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.processTranscriptWorker.resources.lambda),
+  { prefix: "transcripts/", suffix: ".json" }
+);
+
+// Lambdas create the MeetingJob row and own its status, so the history list
+// stays correct when nobody is watching.
+const meetingJobTable = backend.data.resources.tables["MeetingJob"];
+for (const lambdaFn of [
+  backend.startTranscription.resources.lambda,
+  backend.checkStatus.resources.lambda,
+  backend.processTranscript.resources.lambda,
+  backend.processTranscriptWorker.resources.lambda,
+]) {
+  meetingJobTable.grantReadWriteData(lambdaFn);
+  (lambdaFn as LambdaFunction).addEnvironment(
+    "MEETING_JOB_TABLE_NAME",
+    meetingJobTable.tableName
+  );
 }
 
 // Add Amazon Transcribe IAM policy to start-transcription and check-status lambdas
