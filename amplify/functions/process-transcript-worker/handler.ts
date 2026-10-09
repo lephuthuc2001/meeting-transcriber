@@ -1,8 +1,11 @@
+import type { S3Event } from "aws-lambda";
 import {
   S3Client,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
+import { setMeetingJobStatus } from "../shared/meetingJob";
 
 const s3Client = new S3Client();
 const BUCKET_NAME = process.env.BUCKET_NAME!;
@@ -178,10 +181,24 @@ function buildSpeakerTranscript(transcriptData: any): string {
   return result.trim();
 }
 
-// Invoked asynchronously by process-transcript — not an API Gateway handler
-export const handler = async (event: { jobId: string; feedback?: string }) => {
-  const { jobId, feedback } = event;
+type WorkerEvent = { jobId: string; feedback?: string } | S3Event;
+
+const REPORT_KEY = (jobId: string) => `reports/${jobId}.txt`;
+
+async function reportExists(jobId: string): Promise<boolean> {
+  try {
+    await s3Client.send(
+      new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: REPORT_KEY(jobId) })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function processJob(jobId: string, feedback?: string): Promise<void> {
   console.log(`Worker processing jobId: ${jobId}`);
+  await setMeetingJobStatus(jobId, "PROCESSING");
 
   try {
     const transcriptObj = await s3Client.send(
@@ -201,15 +218,48 @@ export const handler = async (event: { jobId: string; feedback?: string }) => {
     await s3Client.send(
       new PutObjectCommand({
         Bucket: BUCKET_NAME,
-        Key: `reports/${jobId}.txt`,
+        Key: REPORT_KEY(jobId),
         Body: reportContent,
         ContentType: "text/plain; charset=utf-8",
       })
     );
 
+    await setMeetingJobStatus(jobId, "COMPLETED", {
+      reportKey: REPORT_KEY(jobId),
+    });
     console.log(`Worker completed jobId: ${jobId}`);
   } catch (error) {
     console.error(`Worker failed for jobId ${jobId}:`, error);
-    throw error;
+    // Recorded instead of rethrown: an async retry would re-bill a full
+    // Claude generation, and the user can re-run from the UI.
+    await setMeetingJobStatus(jobId, "FAILED", {
+      errorMessage: "Không thể tạo biên bản. Vui lòng thử lại.",
+    });
+  }
+}
+
+// Two triggers:
+// - S3 ObjectCreated on transcripts/*.json (wired in backend.ts) — the normal
+//   path, so a report is generated even if the browser is gone.
+// - InvokeCommand from process-transcript — manual re-runs, e.g. regenerate
+//   with feedback.
+export const handler = async (event: WorkerEvent) => {
+  if (!("Records" in event)) {
+    await processJob(event.jobId, event.feedback);
+    return;
+  }
+
+  for (const record of event.Records) {
+    const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
+    const match = key.match(/^transcripts\/(.+)\.json$/);
+    if (!match) continue;
+    const jobId = match[1];
+
+    // S3 events can be delivered more than once
+    if (await reportExists(jobId)) {
+      console.log(`Report already exists for jobId ${jobId}, skipping`);
+      continue;
+    }
+    await processJob(jobId);
   }
 };

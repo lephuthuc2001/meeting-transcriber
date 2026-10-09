@@ -4,10 +4,20 @@ import {
   GetTranscriptionJobCommand,
 } from "@aws-sdk/client-transcribe";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  getMeetingJob,
+  setMeetingJobStatus,
+  type MeetingJobRow,
+} from "../shared/meetingJob";
 
 const transcribeClient = new TranscribeClient();
 const s3Client = new S3Client();
 const BUCKET_NAME = process.env.BUCKET_NAME!;
+// Worker timeout is 600s; past this a PROCESSING row is dead, not slow
+const STALE_PROCESSING_MS = 15 * 60 * 1000;
+
+const isStale = (row: MeetingJobRow) =>
+  !row.updatedAt || Date.now() - Date.parse(row.updatedAt) > STALE_PROCESSING_MS;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -36,17 +46,37 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     let status = "UNKNOWN";
+    let errorMessage: string | undefined;
     try {
       const response = await transcribeClient.send(
         new GetTranscriptionJobCommand({ TranscriptionJobName: jobId })
       );
       status = response.TranscriptionJob?.TranscriptionJobStatus || "UNKNOWN";
+      errorMessage = response.TranscriptionJob?.FailureReason;
     } catch {
       // Job may have expired in AWS Transcribe — still check S3 for the report
     }
 
+    // Lambdas own the MeetingJob status; a missing row (browser closed before
+    // creating it) just means there's nothing to reconcile.
+    let row: MeetingJobRow | undefined;
+    try {
+      row = await getMeetingJob(jobId);
+    } catch (err) {
+      console.error("Error reading MeetingJob row:", err);
+    }
+
     let reportReady = false;
     let report: string | undefined;
+    let reportKey: string | undefined;
+
+    // A failed transcription writes no transcript, so the S3 trigger never
+    // fires — this is the only place the row learns about it.
+    if (status === "FAILED" && row && row.status !== "FAILED") {
+      await setMeetingJobStatus(jobId, "FAILED", {
+        errorMessage: errorMessage || "Chuyển đổi giọng nói thất bại.",
+      });
+    }
 
     // Check S3 if Transcribe says COMPLETED, or if Transcribe job is gone
     // (expired jobs no longer exist in Transcribe but the S3 report may still be there)
@@ -60,9 +90,40 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             })
           );
           report = await reportObj.Body?.transformToString();
-          if (report) { reportReady = true; status = "COMPLETED"; break; }
+          if (report) {
+            reportReady = true;
+            reportKey = `reports/${jobId}.${ext}`;
+            status = "COMPLETED";
+            break;
+          }
         } catch {
           // try next extension
+        }
+      }
+
+      // e.g. the worker finished after the tab that started it was closed.
+      // A fresh PROCESSING row with a report is a regenerate in flight (or
+      // the worker about to mark it itself), so leave that one alone.
+      if (
+        reportReady &&
+        row &&
+        row.status !== "COMPLETED" &&
+        !(row.status === "PROCESSING" && !isStale(row))
+      ) {
+        await setMeetingJobStatus(jobId, "COMPLETED", { reportKey });
+      }
+
+      if (!reportReady && row?.status === "FAILED") {
+        status = "FAILED";
+        errorMessage = row.errorMessage;
+      } else if (!reportReady && row?.status === "PROCESSING") {
+        // A worker killed by its timeout can't record the failure itself
+        if (isStale(row)) {
+          status = "FAILED";
+          errorMessage = "Quá thời gian tạo biên bản. Vui lòng thử lại.";
+          await setMeetingJobStatus(jobId, "FAILED", { errorMessage });
+        } else {
+          status = "PROCESSING";
         }
       }
     }
@@ -75,6 +136,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         status,
         reportReady,
         ...(report && { report }),
+        ...(status === "FAILED" && errorMessage && { errorMessage }),
       }),
     };
   } catch (error) {

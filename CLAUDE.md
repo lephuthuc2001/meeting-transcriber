@@ -35,11 +35,11 @@ The AWS profile `amplify-policy-075701661574` is hardcoded in [Makefile](Makefil
 
 1. Browser uploads audio → S3 `audio/{timestamp}-{name}` via Amplify Storage (guest auth).
 2. Browser calls `POST /transcribe` → `start-transcription` Lambda starts an Amazon Transcribe job (`vi-VN`, `ShowSpeakerLabels: true`, `MaxSpeakerLabels: 10`). Output → `transcripts/{jobId}.json`.
-3. Browser also writes a `MeetingJob` row to DynamoDB via the Amplify Data client (used for the history list).
-4. Browser polls `GET /status?jobId=…` every 5s ([app/components/ProcessingStatus.tsx](app/components/ProcessingStatus.tsx)).
-5. When Transcribe reports `COMPLETED`, the browser calls `POST /process` → `process-transcript` (dispatcher) verifies the transcript, deletes any stale report, then **invokes `process-transcript-worker` asynchronously** (`InvocationType: "Event"`) and returns `202` immediately.
-6. Worker reads the transcript JSON, rebuilds it as speaker-labelled text via `buildSpeakerTranscript`, calls Anthropic with the `Nghị quyết Chi bộ` system prompt, and writes `reports/{jobId}.txt`.
-7. Browser polling sees `reportReady: true` (status returns the report body) and shows it in `ReportViewer`.
+3. Browser also creates the `MeetingJob` row in DynamoDB via the Amplify Data client (used for the history list). From then on **Lambdas own its status**.
+4. When Transcribe writes `transcripts/{jobId}.json`, an **S3 `ObjectCreated` notification invokes `process-transcript-worker` directly**. No browser is involved, so closing the tab doesn't stall the job.
+5. Worker marks the row `PROCESSING`, reads the transcript JSON, rebuilds it as speaker-labelled text via `buildSpeakerTranscript`, calls Anthropic with the `Nghị quyết Chi bộ` system prompt, writes `reports/{jobId}.txt` and marks the row `COMPLETED` (or `FAILED`; it doesn't rethrow, so there's no async retry re-billing a generation).
+6. Browser polls `GET /status?jobId=…` every 5s ([app/components/ProcessingStatus.tsx](app/components/ProcessingStatus.tsx)) only to reflect state, and shows the report in `ReportViewer` once `reportReady: true`. It falls back to calling `POST /process` itself only if the transcript has been ready for 60s and no worker has picked it up.
+7. `POST /process` → `process-transcript` (dispatcher) is for manual runs (regenerate with feedback, retry from history): it verifies the transcript, deletes any stale report, marks the row `PROCESSING`, **invokes the worker asynchronously** (`InvocationType: "Event"`) and returns `202`.
 
 ### Why the dispatcher/worker split
 
@@ -52,6 +52,8 @@ Anthropic generation can exceed API Gateway's 29s timeout. `process-transcript` 
 - Transcribe IAM policies are attached per-Lambda (start/check/cancel).
 - The REST API Gateway and its four routes (`/transcribe`, `/status`, `/process`, `/cancel`) are defined here, not in any per-function file.
 - The dispatcher gets `WORKER_FUNCTION_NAME` injected and `lambda.grantInvoke` on the worker.
+- The bucket's `transcripts/*.json` ObjectCreated notification targets the worker. That's why the worker has `resourceGroupName: "storage"`: in the function stack it would be a circular stack reference.
+- `check-status`, `process-transcript` and the worker get read/write on the `MeetingJob` table plus `MEETING_JOB_TABLE_NAME`.
 - The API URL is exported via `backend.addOutput({ custom: { apiUrl } })` and read from `amplify_outputs.json` on the client as `(outputs as any).custom?.apiUrl`.
 
 When adding a new Lambda or route, update `backend.ts` — there's no auto-discovery.
@@ -63,9 +65,9 @@ Each Lambda has its own `resource.ts` (config) and `handler.ts` (code) under [am
 | Function | Trigger | Notes |
 |---|---|---|
 | `start-transcription` | API GW `POST /transcribe` | Generates `jobId` via `randomUUID()`, calls `StartTranscriptionJobCommand` |
-| `check-status` | API GW `GET /status` | Checks Transcribe job, then S3 for the report. Falls back to S3-only when the Transcribe job has expired (`UNKNOWN` status). |
-| `process-transcript` | API GW `POST /process` | Dispatcher only — verifies transcript exists, deletes prior report, invokes worker async, returns 202. |
-| `process-transcript-worker` | `InvokeCommand` from dispatcher | Long-running. Reads `ANTHROPIC_API_KEY` from Amplify secret. Has the Vietnamese resolution prompt. Output is **plain text**, not Markdown. |
+| `check-status` | API GW `GET /status` | Checks Transcribe job, then S3 for the report. Falls back to S3-only when the Transcribe job has expired (`UNKNOWN` status). Also reconciles the `MeetingJob` row: Transcribe `FAILED` → `FAILED`, report present → `COMPLETED`, `PROCESSING` for >15 min (worker timed out) → `FAILED`. |
+| `process-transcript` | API GW `POST /process` | Dispatcher only — verifies transcript exists, deletes prior report, marks row `PROCESSING`, invokes worker async, returns 202. |
+| `process-transcript-worker` | S3 `transcripts/*.json` ObjectCreated, or `InvokeCommand` from dispatcher | Long-running. Skips S3 events whose report already exists (duplicate delivery). Reads `ANTHROPIC_API_KEY` from Amplify secret. Has the Vietnamese resolution prompt. Output is **plain text**, not Markdown. |
 | `cancel-job` | API GW `POST /cancel` | Best-effort cleanup of Transcribe job + audio S3 object. |
 
 The root [tsconfig.json](tsconfig.json) **excludes `amplify/`** — Lambdas are compiled by Amplify/esbuild against [amplify/tsconfig.json](amplify/tsconfig.json).
@@ -78,7 +80,7 @@ The root [tsconfig.json](tsconfig.json) **excludes `amplify/`** — Lambdas are 
 
 ### Data model
 
-[amplify/data/resource.ts](amplify/data/resource.ts) defines a single `MeetingJob` model with `allow.publicApiKey()` auth, mode `apiKey` (30-day expiry). The frontend uses `generateClient<Schema>({ authMode: "apiKey" })`. There's no per-user authorization.
+[amplify/data/resource.ts](amplify/data/resource.ts) defines a single `MeetingJob` model with `allow.guest()` auth (default mode `iam`). The frontend uses `generateClient<Schema>({ authMode: "iam" })`; Lambdas bypass AppSync and write the table directly. There's no per-user authorization.
 
 ### Frontend structure
 
@@ -96,5 +98,5 @@ The root [tsconfig.json](tsconfig.json) **excludes `amplify/`** — Lambdas are 
 - **The resolution prompt requires plain text output** — no Markdown, no HTML, with **one exception**: the Mục I.3 progress table is emitted as `| a | b | c |` rows (plain text has no way to express a 4-column grid). `renderBody` groups consecutive pipe rows into a Word table and drops any Markdown `|---|` separator row.
 - **The first four lines are load-bearing** (`ĐẢNG ỦY …`, `CHI BỘ …`, `Số …-NQ/CB`, `[Địa danh], ngày … tháng … năm …`, then `NGHỊ QUYẾT`). `parseReport` reads them into the two-column formality header; unknown values stay as `……` placeholders rather than being dropped. A report without a `NGHỊ QUYẾT` line in its first 12 lines is treated as header-less and rendered entirely as body, so older reports still export.
 - **The verbatim discussion record lives in the appendix** (`PHỤ LỤC: TỔNG HỢP Ý KIẾN THẢO LUẬN…`), which the exporter puts on its own page. Hướng dẫn 42 folds discussion into Mục I and II, but the polished-not-verbatim rule from commit `1aef59f` still applies there: the appendix keeps every opinion so nothing from the transcript is lost. Don't drop it, and don't make Mục I/II verbatim.
-- **DynamoDB writes happen client-side** (e.g. `AudioUploader` creates the `MeetingJob` row, `ProcessingStatus` updates status). Lambdas don't touch DynamoDB. Status truth comes from S3 + Transcribe; DynamoDB is for the history list.
+- **The browser creates the `MeetingJob` row; Lambdas own its status** (via [amplify/functions/shared/meetingJob.ts](amplify/functions/shared/meetingJob.ts), conditional on the row existing). The browser still renames and deletes rows. `JobHistory` calls `/status` for rows still `TRANSCRIBING`/`PROCESSING` so they reconcile, and offers "Tạo lại biên bản" for `FAILED` rows and for rows stuck for over an hour.
 - **`@/` alias** maps to repo root, so `@/amplify/data/resource` and `@/amplify_outputs.json` are normal client-side imports. The `amplify/` exclusion in tsconfig applies only to type-checking the Lambda code, not to importing the type-only `Schema` from data resource.

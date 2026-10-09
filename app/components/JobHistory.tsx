@@ -15,6 +15,7 @@ import {
   ChevronRight,
   FileText,
   Pencil,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,15 @@ const client = generateClient<Schema>({ authMode: "iam" });
 const apiUrl = (outputs as any).custom?.apiUrl;
 
 const PAGE_SIZE = 5;
+
+// Longer than transcription + generation ever take; a row still in flight
+// past this was never picked up (e.g. transcribed before the S3 trigger
+// existed) and needs a manual kick.
+const STUCK_AFTER_MS = 60 * 60 * 1000;
+
+const isStuck = (job: { status?: string | null; updatedAt: string }) =>
+  (job.status === "TRANSCRIBING" || job.status === "PROCESSING") &&
+  Date.now() - new Date(job.updatedAt).getTime() > STUCK_AFTER_MS;
 
 const STATUS_LABELS: Record<JobStatus, string> = {
   UPLOADING: "Đang tải lên",
@@ -77,9 +87,11 @@ export default function JobHistory({
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
-  const fetchJobs = useCallback(async () => {
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  const fetchJobs = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const { data } = await client.models.MeetingJob.list({
         limit: 100,
       });
@@ -98,6 +110,54 @@ export default function JobHistory({
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs, refreshKey]);
+
+  // Rows still in flight may have finished while no tab was open. /status
+  // reconciles the row server-side, so refetch once any of them settles.
+  const pendingIds = jobs
+    .filter((j) => j.status === "TRANSCRIBING" || j.status === "PROCESSING")
+    .map((j) => j.id)
+    .join(",");
+
+  useEffect(() => {
+    if (!pendingIds || !apiUrl) return;
+    const reconcile = async () => {
+      const settled = await Promise.all(
+        pendingIds.split(",").map(async (jobId) => {
+          try {
+            const res = await fetch(`${apiUrl}/status?jobId=${jobId}`);
+            if (!res.ok) return false;
+            const data = await res.json();
+            return data.reportReady || data.status === "FAILED";
+          } catch {
+            return false;
+          }
+        })
+      );
+      if (settled.some(Boolean)) fetchJobs(true);
+    };
+    reconcile();
+    const intervalId = setInterval(reconcile, 15000);
+    return () => clearInterval(intervalId);
+  }, [pendingIds, fetchJobs]);
+
+  const handleRetry = async (jobId: string) => {
+    setRetryingId(jobId);
+    try {
+      const res = await fetch(`${apiUrl}/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toast.success("Đang tạo lại biên bản");
+      await fetchJobs(true);
+    } catch (err) {
+      console.error("Lỗi khi tạo lại biên bản:", err);
+      toast.error("Không thể tạo lại biên bản. Vui lòng thử lại.");
+    } finally {
+      setRetryingId(null);
+    }
+  };
 
   const handleDownloadAudio = async (audioKey: string) => {
     try {
@@ -289,6 +349,20 @@ export default function JobHistory({
                             Xem biên bản
                           </>
                         )}
+                      </Button>
+                    )}
+                    {(status === "FAILED" || isStuck(job)) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRetry(job.id)}
+                        disabled={retryingId === job.id}
+                      >
+                        {retryingId === job.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <RotateCcw className="size-4" />
+                        )}
+                        Tạo lại biên bản
                       </Button>
                     )}
                     <Button
