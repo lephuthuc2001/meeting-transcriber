@@ -4,6 +4,8 @@ const schema = a.schema({
   MeetingJob: a
     .model({
       title: a.string().required(),
+      // true while the title is a placeholder; the AI-generated title replaces it
+      autoTitle: a.boolean(),
       status: a.enum([
         "UPLOADING",
         "TRANSCRIBING",
