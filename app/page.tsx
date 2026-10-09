@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { FileAudio } from "lucide-react";
+import { FileAudio, Upload, Cog, FileText } from "lucide-react";
 import { downloadData } from "aws-amplify/storage";
 import AudioUploader from "./components/AudioUploader";
 import ProcessingStatus from "./components/ProcessingStatus";
@@ -69,25 +69,54 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+      >
+        Bỏ qua đến nội dung chính
+      </a>
+
       {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-lg bg-primary text-primary-foreground">
-            <FileAudio className="size-5" />
+      <header className="bg-primary text-primary-foreground shadow-sm">
+        <div className="container mx-auto max-w-5xl px-4 py-5 flex items-center gap-4">
+          <div className="flex items-center justify-center size-12 rounded-xl bg-white/15">
+            <FileAudio className="size-7" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight">
               Biên Bản Cuộc Họp
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Chuyển đổi ghi âm cuộc họp thành biên bản tự động
+            <p className="text-base text-primary-foreground/90">
+              Tải lên ghi âm, nhận biên bản Nghị quyết Chi bộ tự động
             </p>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
+      <main id="main" className="container mx-auto px-4 py-8 space-y-8 max-w-5xl">
+        {/* Step guide */}
+        <ol className="grid gap-3 sm:grid-cols-3" aria-label="Các bước thực hiện">
+          {[
+            { icon: Upload, title: "Bước 1", text: "Tải tệp ghi âm lên" },
+            { icon: Cog, title: "Bước 2", text: "Chờ hệ thống xử lý" },
+            { icon: FileText, title: "Bước 3", text: "Xem và tải biên bản" },
+          ].map(({ icon: Icon, title, text }) => (
+            <li
+              key={title}
+              className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">
+                <Icon className="size-5" aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-primary">{title}</span>
+                <span className="block text-base">{text}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+
         {/* Upload Section */}
         <AudioUploader onTranscriptionStarted={handleTranscriptionStarted} />
 

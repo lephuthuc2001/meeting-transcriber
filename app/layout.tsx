@@ -4,11 +4,11 @@ import "./globals.css";
 import ConfigureAmplify from "./components/ConfigureAmplify";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ["latin", "vietnamese"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Bien Ban Cuoc Hop",
-  description: "Cong cu chuyen doi ghi am cuoc hop thanh bien ban",
+  title: "Biên Bản Cuộc Họp",
+  description: "Công cụ chuyển đổi ghi âm cuộc họp thành biên bản",
 };
 
 export default function RootLayout({

@@ -167,42 +167,42 @@ export default function ProcessingStatus({
         {phase === "failed" ? (
           <>
             <XCircle className="size-10 text-destructive" />
-            <p className="text-sm font-medium text-destructive">
+            <p role="alert" className="text-base font-medium text-destructive">
               {errorMessage}
             </p>
           </>
         ) : phase === "completed" ? (
           <>
             <CheckCircle className="size-10 text-green-600" />
-            <p className="text-sm font-medium text-green-600">
+            <p className="text-base font-medium text-green-700">
               {PHASE_MESSAGES.completed}
             </p>
           </>
         ) : (
           <div className="w-full space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{PHASE_MESSAGES[phase]}</span>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span className="text-base font-medium text-foreground">{PHASE_MESSAGES[phase]}</span>
               {phase === "transcribing" && transcribeProgress !== null && (
                 <span>{transcribeProgress}%</span>
               )}
             </div>
-            <div className="w-full bg-muted rounded-full h-2.5">
+            <div className="w-full bg-muted rounded-full h-3">
               {phase === "transcribing" && transcribeProgress !== null ? (
                 <div
-                  className="bg-primary h-2.5 rounded-full transition-all duration-1000"
+                  className="bg-primary h-3 rounded-full transition-all duration-1000"
                   style={{ width: `${transcribeProgress}%` }}
                 />
               ) : (
-                <div className="bg-primary h-2.5 rounded-full animate-pulse w-3/4" />
+                <div className="bg-primary h-3 rounded-full animate-pulse w-3/4" />
               )}
             </div>
             {phase === "transcribing" && remaining !== null && (
-              <p className="text-xs text-muted-foreground text-right">
+              <p className="text-base text-muted-foreground text-right">
                 Còn khoảng {formatTime(remaining)}
               </p>
             )}
             {phase === "processing" && (
-              <p className="text-xs text-muted-foreground text-right">
+              <p className="text-base text-muted-foreground text-right">
                 Đã xử lý: {formatTime(elapsed)}
               </p>
             )}
