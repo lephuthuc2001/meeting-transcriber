@@ -1,4 +1,4 @@
-import type { S3Event } from "aws-lambda";
+import type { Context, S3Event } from "aws-lambda";
 import {
   S3Client,
   GetObjectCommand,
@@ -43,7 +43,7 @@ c) Thực hiện dân chủ ở cơ sở, xây dựng đời sống văn hóa, p
 d) Công tác phòng, chống tham nhũng, lãng phí, tiêu cực; bảo đảm vệ sinh môi trường, trật tự đô thị
 đ) Công tác quản lý đảng viên, tạo nguồn phát triển đảng
 e) Việc thực hiện Kết luận Trung ương 4 gắn với Kết luận số 01-KL/TW
-[Danh sách trên là các đầu mục gợi ý. Mỗi mục ghi đầy đủ nội dung tương ứng được đề cập trong bản ghi chép; bỏ mục nào hoàn toàn không được đề cập, và bổ sung đầu mục mới nếu bản ghi chép có nội dung không thuộc mục nào ở trên. SAU KHI bỏ/bổ sung, PHẢI đánh lại thứ tự chữ cái LIÊN TỤC bắt đầu từ a) — tuyệt đối không để ngắt quãng (không được bắt đầu bằng c), cũng không được nhảy từ b) sang d)).]
+[Danh sách trên là các đầu mục gợi ý. Mỗi mục ghi đầy đủ nội dung tương ứng được đề cập trong bản ghi chép, trong đó mọi ý kiến phát biểu liên quan được ghi theo quy tắc GHI Ý KIẾN PHÁT BIỂU ở cuối; bỏ mục nào hoàn toàn không được đề cập, và bổ sung đầu mục mới nếu bản ghi chép có nội dung không thuộc mục nào ở trên. SAU KHI bỏ/bổ sung, PHẢI đánh lại thứ tự chữ cái LIÊN TỤC bắt đầu từ a) — tuyệt đối không để ngắt quãng (không được bắt đầu bằng c), cũng không được nhảy từ b) sang d)).]
 
 3. Kết quả thực hiện Nghị quyết Chi bộ tháng [tháng liền trước]
 Chi ủy tổng hợp, đối chiếu kết quả thực hiện từng nhiệm vụ đề ra tại Mục II Nghị quyết Chi bộ tháng [tháng liền trước] như sau:
@@ -65,7 +65,7 @@ II. PHƯƠNG HƯỚNG, NHIỆM VỤ THÁNG [tháng tới]
 
 2. Về lãnh đạo thực hiện nhiệm vụ chính trị
 a) [Tên đầu việc]
-[Nội dung: giao ai chủ trì, làm gì, thời hạn hoàn thành, báo cáo kết quả tại kỳ sinh hoạt nào]
+[Nội dung: các ý kiến phát biểu về đầu việc này (theo quy tắc GHI Ý KIẾN PHÁT BIỂU), sau đó là kết luận: giao ai chủ trì, làm gì, thời hạn hoàn thành, báo cáo kết quả tại kỳ sinh hoạt nào]
 b) [Tên đầu việc]
 […tiếp tục c) d) đ) e) g) h) theo đúng thứ tự chữ cái tiếng Việt dùng trong văn bản Đảng: a, b, c, d, đ, e, g, h, i, k. Luôn bắt đầu từ a) và đánh liên tục, không ngắt quãng.]
 [Khi một đầu việc có nhiều nội dung nhỏ, liệt kê bằng dấu chấm đầu dòng "• " ở đầu dòng.]
@@ -93,19 +93,76 @@ T/M CHI ỦY
 BÍ THƯ
 [Họ tên Bí thư]
 
-PHỤ LỤC: TỔNG HỢP Ý KIẾN THẢO LUẬN TẠI KỲ SINH HOẠT
-[Ghi lại ĐẦY ĐỦ từng ý kiến phát biểu theo đúng thứ tự trong bản ghi chép, mỗi ý kiến một đoạn: "[Tên hoặc nhãn người phát biểu] (Nam/Nữ nếu xác định được): [nội dung]". Giữ nguyên toàn bộ nội dung và ý nghĩa, chỉ chỉnh sửa ngôn ngữ cho mạch lạc, bỏ tiếng lặp/ừ/à/thì/mà không có nghĩa. KHÔNG lược bỏ bất kỳ ý kiến nào. Nếu bản ghi chép có nhãn người nói (ví dụ [spk_0], [spk_1]…), hãy cố gắng nhận diện giới tính của từng người dựa vào đại từ xưng hô (anh, chị, ông, bà…) hoặc ngữ cảnh.]
+[KẾT THÚC nghị quyết tại dòng họ tên Bí thư. KHÔNG viết phần PHỤ LỤC.]
+
+GHI Ý KIẾN PHÁT BIỂU (bắt buộc, áp dụng cho Mục I và Mục II):
+- Mỗi lượt phát biểu trong bản ghi chép (báo cáo, ý kiến thảo luận, chất vấn, trả lời, kết luận) phải được ghi vào mục phù hợp, mỗi lượt một đoạn riêng, theo dạng: "[Đồng chí <họ tên>, <chức danh nếu có> hoặc Người phát biểu N] (Nam/Nữ nếu xác định được) phát biểu: [lời phát biểu]".
+- [lời phát biểu] phải GIỮ NGUYÊN LỜI của người nói: giữ đúng câu chữ, cách xưng hô, cách diễn đạt, thứ tự ý và TẤT CẢ các ý, chi tiết, số liệu, ví dụ mà người đó nói. Chỉ được phép: bỏ các từ đệm vô nghĩa (ừ, à, ờ, thì là, mà…), bỏ từ lặp do nói vấp, thêm dấu câu cho dễ đọc.
+- TUYỆT ĐỐI KHÔNG tóm tắt, KHÔNG rút gọn, KHÔNG diễn đạt lại bằng lời khác, KHÔNG chuyển sang lời kể gián tiếp (kiểu "đồng chí A đề nghị cần…"), KHÔNG gộp ý kiến của nhiều người thành một, KHÔNG bỏ qua lượt phát biểu nào kể cả lượt ngắn. Độ dài lời phát biểu trong nghị quyết phải tương đương độ dài trong bản ghi chép.
+- Nếu một lượt phát biểu đề cập nhiều nội dung thuộc các mục khác nhau, tách thành các đoạn ở đúng từng mục, mỗi đoạn vẫn giữ nguyên lời; không được làm mất phần nào. Lượt phát biểu không thuộc mục gợi ý nào thì bổ sung đầu mục mới cho phù hợp.
+- Giữ thứ tự phát biểu như trong bản ghi chép trong cùng một mục. Sau các ý kiến, nếu bản ghi chép có kết luận hoặc thống nhất của chi bộ về nội dung đó thì ghi tiếp.
+- Nhận diện người nói: bản ghi chép dùng nhãn [spk_0], [spk_1]… Hãy xác định họ tên, chức danh từ ngữ cảnh (người được gọi tên, tự giới thiệu, người chủ trì…) và gọi nhất quán trong toàn văn bản. Không xác định được tên thì gọi "Người phát biểu N" theo số nhãn (spk_0 → "Người phát biểu 1", spk_1 → "Người phát biểu 2"…). Nhận diện giới tính dựa vào đại từ xưng hô (anh, chị, ông, bà…) hoặc ngữ cảnh. Bản ghi chép tự động có thể nhận nhầm người nói ở chỗ chuyển lượt; khi ngữ cảnh cho thấy rõ, hãy ghi đúng người nói.
 
 QUAN TRỌNG:
 - Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt. NGOẠI LỆ DUY NHẤT: bảng ở Mục I.3 viết theo dạng các dòng bắt đầu và kết thúc bằng dấu "|", mỗi ô cách nhau bằng "|" (dòng đầu tiên là dòng tiêu đề). KHÔNG chèn dòng gạch ngang "|---|---|" kiểu Markdown.
 - Bốn dòng đầu tiên (ĐẢNG ỦY…, CHI BỘ…, Số…-NQ/CB, [Địa danh], ngày…) là phần thể thức bắt buộc, luôn giữ đúng thứ tự này để hệ thống xuất file Word đọc được. Thông tin nào không có trong bản ghi chép thì để dấu chấm lửng "……" trên đúng dòng đó, KHÔNG xóa dòng.
 - Tiêu đề Mục I, II, III, IV viết IN HOA, đúng dạng "I. ", "II. ", "III. ", "IV. ".
 - TUYỆT ĐỐI KHÔNG tóm tắt, rút gọn, hay lược bỏ bất kỳ thông tin nào của bản ghi chép. Mọi nội dung, số liệu, tên người, ngày tháng, văn bản (số hiệu, ngày ban hành) được đề cập đều phải xuất hiện ở mục phù hợp.
-- Nội dung thảo luận trong bản ghi chép phải được phân bổ vào đúng mục I và II; phần PHỤ LỤC giữ lại nguyên vẹn từng ý kiến để đối chiếu, không thay thế cho mục I và II.
+- Nội dung thảo luận trong bản ghi chép phải được phân bổ vào đúng mục I và II, ghi theo quy tắc GHI Ý KIẾN PHÁT BIỂU ở trên. Các phần mang tính tổng hợp (bảng ở Mục I.3, "Một là, Hai là…" ở Mục I.5, Mục III, Mục IV) được phép viết gọn, nhưng không thay thế cho việc ghi nguyên lời các ý kiến.
 - Nếu thông tin nào không có trong bản ghi chép: ở đoạn mở đầu và các dòng thể thức, để dấu chấm lửng "……" đúng chỗ để người ký điền tay; ở phần nội dung, ghi "[không đề cập]". Riêng các mục a), b), c)… hoàn toàn không được đề cập thì bỏ hẳn mục đó rồi đánh lại chữ cái liên tục từ a).
 - Giữ nguyên tiếng Việt.`;
 
-async function callClaude(transcript: string, feedback?: string): Promise<string> {
+/**
+ * Reads an Anthropic Messages SSE stream into the final text. Streaming keeps
+ * the connection busy during a generation that can run for many minutes.
+ */
+async function readClaudeStream(
+  body: ReadableStream<Uint8Array>
+): Promise<{ text: string; stopReason?: string }> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  let stopReason: string | undefined;
+
+  const handleEvent = (raw: string) => {
+    const data = raw
+      .split("\n")
+      .filter((l) => l.startsWith("data:"))
+      .map((l) => l.slice(5).trimStart())
+      .join("\n");
+    if (!data) return;
+    const event = JSON.parse(data);
+    if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+      text += event.delta.text;
+    } else if (event.type === "message_delta" && event.delta?.stop_reason) {
+      stopReason = event.delta.stop_reason;
+    } else if (event.type === "error") {
+      throw new Error(`Claude API stream error: ${JSON.stringify(event.error)}`);
+    }
+  };
+
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    // stream: true keeps a multibyte Vietnamese character split across chunks intact
+    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+    let sep: number;
+    while ((sep = buffer.indexOf("\n\n")) !== -1) {
+      handleEvent(buffer.slice(0, sep));
+      buffer = buffer.slice(sep + 2);
+    }
+  }
+  buffer += decoder.decode().replace(/\r\n/g, "\n");
+  if (buffer.trim()) handleEvent(buffer);
+  return { text, stopReason };
+}
+
+async function callClaude(
+  transcript: string,
+  feedback: string | undefined,
+  signal: AbortSignal
+): Promise<string> {
   let userMessage = `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
   if (feedback?.trim()) {
     userMessage += `\n\nNgười dùng có nhận xét sau về bản nháp trước:\n${feedback.trim()}\n\nHãy soạn lại nghị quyết theo nhận xét trên, vẫn dùng đúng định dạng yêu cầu.`;
@@ -119,27 +176,40 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-5",
-      max_tokens: 32000,
-      thinking: { type: "disabled" },
+      model: "claude-sonnet-5-5",
+      // Verbatim speaker quotes make the report roughly as long as the
+      // transcript itself; 128K is Sonnet 5.5's output maximum. In practice
+      // the worker's 900s timeout is the tighter limit.
+      max_tokens: 128000,
+      stream: true,
+      // Sonnet 5.5 rejects { type: "disabled" }; between_tools is its
+      // thinking-off setting, valid only at effort "high" or below. "high"
+      // keeps the output thorough, which the verbatim quotes need.
+      thinking: { type: "between_tools" },
+      output_config: { effort: "high" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
+    signal,
   });
 
-  if (!response.ok) {
+  if (!response.ok || !response.body) {
     const err = await response.text();
     throw new Error(`Claude API error ${response.status}: ${err}`);
   }
 
-  const data = (await response.json()) as any;
-  const textBlock = data.content?.find((block: any) => block.type === "text");
-  if (!textBlock?.text) {
-    throw new Error(
-      `Claude API returned no text content (stop_reason: ${data.stop_reason})`
-    );
+  const { text, stopReason } = await readClaudeStream(response.body);
+  if (stopReason === "refusal") {
+    throw new Error("Claude declined to generate the report (stop_reason: refusal)");
   }
-  return textBlock.text;
+  // A cut-off report would silently lose the speakers at the end
+  if (stopReason === "max_tokens") {
+    throw new Error("Claude output hit max_tokens; report would be truncated");
+  }
+  if (!text) {
+    throw new Error(`Claude API returned no text content (stop_reason: ${stopReason})`);
+  }
+  return text;
 }
 
 /**
@@ -206,7 +276,16 @@ async function reportExists(jobId: string): Promise<boolean> {
   }
 }
 
-async function processJob(jobId: string, feedback?: string): Promise<void> {
+// Abort the Claude call this long before the Lambda deadline, so the catch
+// block still has time to mark the row FAILED instead of the invocation being
+// killed with the row left PROCESSING.
+const DEADLINE_MARGIN_MS = 30_000;
+
+async function processJob(
+  jobId: string,
+  feedback: string | undefined,
+  context: Context
+): Promise<void> {
   console.log(`Worker processing jobId: ${jobId}`);
   await setMeetingJobStatus(jobId, "PROCESSING");
 
@@ -224,7 +303,13 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
     const transcriptText = buildSpeakerTranscript(transcriptData);
 
     const { title, report: reportContent } = splitTitle(
-      await callClaude(transcriptText, feedback)
+      await callClaude(
+        transcriptText,
+        feedback,
+        AbortSignal.timeout(
+          Math.max(context.getRemainingTimeInMillis() - DEADLINE_MARGIN_MS, 1_000)
+        )
+      )
     );
 
     await s3Client.send(
@@ -258,9 +343,9 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
 //   path, so a report is generated even if the browser is gone.
 // - InvokeCommand from process-transcript — manual re-runs, e.g. regenerate
 //   with feedback.
-export const handler = async (event: WorkerEvent) => {
+export const handler = async (event: WorkerEvent, context: Context) => {
   if (!("Records" in event)) {
-    await processJob(event.jobId, event.feedback);
+    await processJob(event.jobId, event.feedback, context);
     return;
   }
 
@@ -275,6 +360,6 @@ export const handler = async (event: WorkerEvent) => {
       console.log(`Report already exists for jobId ${jobId}, skipping`);
       continue;
     }
-    await processJob(jobId);
+    await processJob(jobId, undefined, context);
   }
 };

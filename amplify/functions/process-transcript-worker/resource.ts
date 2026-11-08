@@ -2,7 +2,8 @@ import { defineFunction, secret } from "@aws-amplify/backend";
 
 export const processTranscriptWorker = defineFunction({
   name: "process-transcript-worker",
-  timeoutSeconds: 600,
+  // Lambda's maximum; long meetings need many minutes of generation
+  timeoutSeconds: 900,
   memoryMB: 512,
   // Lives in the storage stack because the bucket's ObjectCreated
   // notification targets it; in the function stack that would be a

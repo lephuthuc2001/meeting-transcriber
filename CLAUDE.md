@@ -11,7 +11,7 @@ Vietnamese meeting-transcription web app. Users upload meeting audio; AWS Transc
 - **Frontend**: Next.js 16 App Router, React 19, Tailwind v4, Radix UI primitives, `sonner` toasts
 - **Backend**: AWS Amplify Gen 2 (`@aws-amplify/backend`)
 - **AWS services**: Cognito, S3, DynamoDB (via AppSync/Data), Lambda, API Gateway REST, Amazon Transcribe
-- **AI**: Anthropic Messages API directly via `fetch` (model `claude-sonnet-5`). The `@anthropic-ai/sdk` is a devDependency but not used at runtime in Lambdas.
+- **AI**: Anthropic Messages API directly via `fetch` (model `claude-sonnet-5-5`, `thinking: {type: "between_tools"}` at effort `high`: Sonnet 5.5 rejects `disabled`). The `@anthropic-ai/sdk` is a devDependency but not used at runtime in Lambdas.
 - **Package manager**: pnpm 8.15.4 (pinned — `amplify.yml` installs this exact version)
 
 ## Commands
@@ -43,7 +43,7 @@ The AWS profile `amplify-policy-075701661574` is hardcoded in [Makefile](Makefil
 
 ### Why the dispatcher/worker split
 
-Anthropic generation can exceed API Gateway's 29s timeout. `process-transcript` (`timeoutSeconds: 120`) only kicks off the work; `process-transcript-worker` (`timeoutSeconds: 600`) does the actual generation. **Don't fold them back together** — that's what commit `6c7edaa` fixed.
+Anthropic generation can exceed API Gateway's 29s timeout. `process-transcript` (`timeoutSeconds: 120`) only kicks off the work; `process-transcript-worker` (`timeoutSeconds: 900`, the Lambda maximum) does the actual generation, **streaming** the Anthropic response and aborting it 30s before the Lambda deadline so the row can still be marked `FAILED`. **Don't fold them back together** — that's what commit `6c7edaa` fixed.
 
 ### Backend wiring lives in one file
 
@@ -65,7 +65,7 @@ Each Lambda has its own `resource.ts` (config) and `handler.ts` (code) under [am
 | Function | Trigger | Notes |
 |---|---|---|
 | `start-transcription` | API GW `POST /transcribe` | Generates `jobId` via `randomUUID()`, calls `StartTranscriptionJobCommand` |
-| `check-status` | API GW `GET /status` | Checks Transcribe job, then S3 for the report. Falls back to S3-only when the Transcribe job has expired (`UNKNOWN` status). Also reconciles the `MeetingJob` row: Transcribe `FAILED` → `FAILED`, report present → `COMPLETED`, `PROCESSING` for >15 min (worker timed out) → `FAILED`. |
+| `check-status` | API GW `GET /status` | Checks Transcribe job, then S3 for the report. Falls back to S3-only when the Transcribe job has expired (`UNKNOWN` status). Also reconciles the `MeetingJob` row: Transcribe `FAILED` → `FAILED`, report present → `COMPLETED`, `PROCESSING` for >20 min (worker timed out) → `FAILED`. |
 | `process-transcript` | API GW `POST /process` | Dispatcher only — verifies transcript exists, deletes prior report, marks row `PROCESSING`, invokes worker async, returns 202. |
 | `process-transcript-worker` | S3 `transcripts/*.json` ObjectCreated, or `InvokeCommand` from dispatcher | Long-running. Skips S3 events whose report already exists (duplicate delivery). Reads `ANTHROPIC_API_KEY` from Amplify secret. Has the Vietnamese resolution prompt. Output is **plain text**, not Markdown. |
 | `cancel-job` | API GW `POST /cancel` | Best-effort cleanup of Transcribe job + audio S3 object. |
@@ -98,6 +98,6 @@ The root [tsconfig.json](tsconfig.json) **excludes `amplify/`** — Lambdas are 
 - **The resolution prompt requires plain text output** — no Markdown, no HTML, with **one exception**: the Mục I.3 progress table is emitted as `| a | b | c |` rows (plain text has no way to express a 4-column grid). `renderBody` groups consecutive pipe rows into a Word table and drops any Markdown `|---|` separator row.
 - **The first four lines are load-bearing** (`ĐẢNG ỦY …`, `CHI BỘ …`, `Số …-NQ/CB`, `[Địa danh], ngày … tháng … năm …`, then `NGHỊ QUYẾT`). `parseReport` reads them into the two-column formality header; unknown values stay as `……` placeholders rather than being dropped. A report without a `NGHỊ QUYẾT` line in its first 12 lines is treated as header-less and rendered entirely as body, so older reports still export.
 - **Auto meeting title**: the prompt asks for a leading `TIÊU ĐỀ: …` line; the worker strips it (`splitTitle`) before saving and stores it URI-encoded in the report's S3 metadata `title`. The worker (or `check-status` when reconciling) writes it to `MeetingJob.title` via `applyAutoTitle`, conditional on `autoTitle` being true (always true at upload — there is no name field; renaming in history clears it). `check-status` also returns it as `title` in that case so the open tab can show it.
-- **The verbatim discussion record lives in the appendix** (`PHỤ LỤC: TỔNG HỢP Ý KIẾN THẢO LUẬN…`), which the exporter puts on its own page. Hướng dẫn 42 folds discussion into Mục I and II, but the polished-not-verbatim rule from commit `1aef59f` still applies there: the appendix keeps every opinion so nothing from the transcript is lost. Don't drop it, and don't make Mục I/II verbatim.
+- **Each speaker's words are kept verbatim inside Mục I and II** — one paragraph per turn, `<speaker> phát biểu: <their own words>`, only filler words (ừ, à…) and stutters removed. Never summarized, paraphrased, merged or turned into reported speech; this is what the users asked for. There is **no `PHỤ LỤC` appendix** any more. The exporter still renders one if an old report has it. Because of the verbatim quotes, the report is about as long as the transcript, hence `max_tokens: 128000` (Sonnet 5.5's max) with streaming; the 900s worker timeout is the real ceiling (very roughly a 2-hour meeting). The worker fails the job on `stop_reason: "max_tokens"` rather than saving a truncated report.
 - **Lambdas create the `MeetingJob` row and own its status** (via [amplify/functions/shared/meetingJob.ts](amplify/functions/shared/meetingJob.ts), status updates are conditional on the row existing). Rows written directly to the table must carry `__typename`, `createdAt` and `updatedAt` the way AppSync would. The browser still renames and deletes rows. `JobHistory` calls `/status` for rows still `TRANSCRIBING`/`PROCESSING` so they reconcile, and offers "Tạo lại biên bản" for `FAILED` rows and for rows stuck for over an hour.
 - **`@/` alias** maps to repo root, so `@/amplify/data/resource` and `@/amplify_outputs.json` are normal client-side imports. The `amplify/` exclusion in tsconfig applies only to type-checking the Lambda code, not to importing the type-only `Schema` from data resource.
