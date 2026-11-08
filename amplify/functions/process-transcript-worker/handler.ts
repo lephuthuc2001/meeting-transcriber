@@ -15,9 +15,7 @@ Dưới đây là bản ghi chép tự động từ buổi sinh hoạt Chi bộ.
 
 Hãy soạn thảo Nghị quyết Chi bộ theo đúng thể thức tại Hướng dẫn số 42-HD/BTCTW ngày 28/10/2025 của Ban Tổ chức Trung ương, xuất ra PLAIN TEXT (KHÔNG dùng HTML hay Markdown), theo đúng khung sau:
 
-DÒNG ĐẦU TIÊN của câu trả lời (trước toàn bộ nghị quyết) phải có dạng "TIÊU ĐỀ: <tên ngắn gọn của cuộc họp, tối đa 12 từ, nêu nội dung chính và tháng/năm nếu biết>", ví dụ "TIÊU ĐỀ: Sinh hoạt chi bộ tháng 9/2026 – thu đảng phí, chuẩn bị đại hội". Dòng này dùng để đặt tên cuộc họp, hệ thống sẽ tách ra trước khi lưu.
-
-Ngay sau dòng TIÊU ĐỀ, với MỖI nhãn người nói xuất hiện trong bản ghi chép (ví dụ [spk_0], [spk_1]…), viết một dòng dạng "NGƯỜI NÓI spk_0: <cách gọi>", trong đó <cách gọi> là họ tên và chức danh nếu xác định được từ ngữ cảnh (ví dụ "Đồng chí Nguyễn Văn A – Bí thư Chi bộ (Nam)"), nếu không thì "Người phát biểu <N+1>" theo số của nhãn (spk_0 → "Người phát biểu 1 (Nam)", spk_1 → "Người phát biểu 2 (Nữ)"…) Nhận diện giới tính dựa vào đại từ xưng hô (anh, chị, ông, bà…) hoặc ngữ cảnh; không xác định được thì bỏ phần (Nam/Nữ). Các dòng này hệ thống cũng tách ra trước khi lưu; sau đó mới đến dòng "ĐẢNG ỦY …".
+DÒNG ĐẦU TIÊN của câu trả lời (trước toàn bộ nghị quyết) phải có dạng "TIÊU ĐỀ: <tên ngắn gọn của cuộc họp, tối đa 12 từ, nêu nội dung chính và tháng/năm nếu biết>", ví dụ "TIÊU ĐỀ: Sinh hoạt chi bộ tháng 9/2026 – thu đảng phí, chuẩn bị đại hội". Dòng này dùng để đặt tên cuộc họp, hệ thống sẽ tách ra trước khi lưu; sau đó mới đến dòng "ĐẢNG ỦY …".
 
 ĐẢNG ỦY PHƯỜNG [tên phường, mặc định: CẨM LỆ]
 CHI BỘ [số/tên chi bộ]
@@ -45,7 +43,7 @@ c) Thực hiện dân chủ ở cơ sở, xây dựng đời sống văn hóa, p
 d) Công tác phòng, chống tham nhũng, lãng phí, tiêu cực; bảo đảm vệ sinh môi trường, trật tự đô thị
 đ) Công tác quản lý đảng viên, tạo nguồn phát triển đảng
 e) Việc thực hiện Kết luận Trung ương 4 gắn với Kết luận số 01-KL/TW
-[Danh sách trên là các đầu mục gợi ý. Mỗi mục ghi đầy đủ nội dung tương ứng được đề cập trong bản ghi chép; bỏ mục nào hoàn toàn không được đề cập, và bổ sung đầu mục mới nếu bản ghi chép có nội dung không thuộc mục nào ở trên. SAU KHI bỏ/bổ sung, PHẢI đánh lại thứ tự chữ cái LIÊN TỤC bắt đầu từ a) — tuyệt đối không để ngắt quãng (không được bắt đầu bằng c), cũng không được nhảy từ b) sang d)).]
+[Danh sách trên là các đầu mục gợi ý. Mỗi mục ghi đầy đủ nội dung tương ứng được đề cập trong bản ghi chép, trong đó mọi ý kiến phát biểu liên quan được ghi theo quy tắc GHI Ý KIẾN PHÁT BIỂU ở cuối; bỏ mục nào hoàn toàn không được đề cập, và bổ sung đầu mục mới nếu bản ghi chép có nội dung không thuộc mục nào ở trên. SAU KHI bỏ/bổ sung, PHẢI đánh lại thứ tự chữ cái LIÊN TỤC bắt đầu từ a) — tuyệt đối không để ngắt quãng (không được bắt đầu bằng c), cũng không được nhảy từ b) sang d)).]
 
 3. Kết quả thực hiện Nghị quyết Chi bộ tháng [tháng liền trước]
 Chi ủy tổng hợp, đối chiếu kết quả thực hiện từng nhiệm vụ đề ra tại Mục II Nghị quyết Chi bộ tháng [tháng liền trước] như sau:
@@ -67,7 +65,7 @@ II. PHƯƠNG HƯỚNG, NHIỆM VỤ THÁNG [tháng tới]
 
 2. Về lãnh đạo thực hiện nhiệm vụ chính trị
 a) [Tên đầu việc]
-[Nội dung: giao ai chủ trì, làm gì, thời hạn hoàn thành, báo cáo kết quả tại kỳ sinh hoạt nào]
+[Nội dung: các ý kiến phát biểu về đầu việc này (theo quy tắc GHI Ý KIẾN PHÁT BIỂU), sau đó là kết luận: giao ai chủ trì, làm gì, thời hạn hoàn thành, báo cáo kết quả tại kỳ sinh hoạt nào]
 b) [Tên đầu việc]
 […tiếp tục c) d) đ) e) g) h) theo đúng thứ tự chữ cái tiếng Việt dùng trong văn bản Đảng: a, b, c, d, đ, e, g, h, i, k. Luôn bắt đầu từ a) và đánh liên tục, không ngắt quãng.]
 [Khi một đầu việc có nhiều nội dung nhỏ, liệt kê bằng dấu chấm đầu dòng "• " ở đầu dòng.]
@@ -95,14 +93,22 @@ T/M CHI ỦY
 BÍ THƯ
 [Họ tên Bí thư]
 
-[KẾT THÚC câu trả lời tại dòng họ tên Bí thư. KHÔNG viết phần PHỤ LỤC: hệ thống tự động đính kèm nguyên văn toàn bộ lời phát biểu từ bản ghi chép.]
+[KẾT THÚC nghị quyết tại dòng họ tên Bí thư. KHÔNG viết phần PHỤ LỤC.]
+
+GHI Ý KIẾN PHÁT BIỂU (bắt buộc, áp dụng cho Mục I và Mục II):
+- Mỗi lượt phát biểu trong bản ghi chép (báo cáo, ý kiến thảo luận, chất vấn, trả lời, kết luận) phải được ghi vào mục phù hợp, mỗi lượt một đoạn riêng, theo dạng: "[Đồng chí <họ tên>, <chức danh nếu có> hoặc Người phát biểu N] (Nam/Nữ nếu xác định được) phát biểu: [lời phát biểu]".
+- [lời phát biểu] phải GIỮ NGUYÊN LỜI của người nói: giữ đúng câu chữ, cách xưng hô, cách diễn đạt, thứ tự ý và TẤT CẢ các ý, chi tiết, số liệu, ví dụ mà người đó nói. Chỉ được phép: bỏ các từ đệm vô nghĩa (ừ, à, ờ, thì là, mà…), bỏ từ lặp do nói vấp, thêm dấu câu cho dễ đọc.
+- TUYỆT ĐỐI KHÔNG tóm tắt, KHÔNG rút gọn, KHÔNG diễn đạt lại bằng lời khác, KHÔNG chuyển sang lời kể gián tiếp (kiểu "đồng chí A đề nghị cần…"), KHÔNG gộp ý kiến của nhiều người thành một, KHÔNG bỏ qua lượt phát biểu nào kể cả lượt ngắn. Độ dài lời phát biểu trong nghị quyết phải tương đương độ dài trong bản ghi chép.
+- Nếu một lượt phát biểu đề cập nhiều nội dung thuộc các mục khác nhau, tách thành các đoạn ở đúng từng mục, mỗi đoạn vẫn giữ nguyên lời; không được làm mất phần nào. Lượt phát biểu không thuộc mục gợi ý nào thì bổ sung đầu mục mới cho phù hợp.
+- Giữ thứ tự phát biểu như trong bản ghi chép trong cùng một mục. Sau các ý kiến, nếu bản ghi chép có kết luận hoặc thống nhất của chi bộ về nội dung đó thì ghi tiếp.
+- Nhận diện người nói: bản ghi chép dùng nhãn [spk_0], [spk_1]… Hãy xác định họ tên, chức danh từ ngữ cảnh (người được gọi tên, tự giới thiệu, người chủ trì…) và gọi nhất quán trong toàn văn bản. Không xác định được tên thì gọi "Người phát biểu N" theo số nhãn (spk_0 → "Người phát biểu 1", spk_1 → "Người phát biểu 2"…). Nhận diện giới tính dựa vào đại từ xưng hô (anh, chị, ông, bà…) hoặc ngữ cảnh. Bản ghi chép tự động có thể nhận nhầm người nói ở chỗ chuyển lượt; khi ngữ cảnh cho thấy rõ, hãy ghi đúng người nói.
 
 QUAN TRỌNG:
 - Sử dụng plain text hoàn toàn. KHÔNG dùng HTML, Markdown, hay ký tự đặc biệt. NGOẠI LỆ DUY NHẤT: bảng ở Mục I.3 viết theo dạng các dòng bắt đầu và kết thúc bằng dấu "|", mỗi ô cách nhau bằng "|" (dòng đầu tiên là dòng tiêu đề). KHÔNG chèn dòng gạch ngang "|---|---|" kiểu Markdown.
 - Bốn dòng đầu tiên (ĐẢNG ỦY…, CHI BỘ…, Số…-NQ/CB, [Địa danh], ngày…) là phần thể thức bắt buộc, luôn giữ đúng thứ tự này để hệ thống xuất file Word đọc được. Thông tin nào không có trong bản ghi chép thì để dấu chấm lửng "……" trên đúng dòng đó, KHÔNG xóa dòng.
 - Tiêu đề Mục I, II, III, IV viết IN HOA, đúng dạng "I. ", "II. ", "III. ", "IV. ".
 - TUYỆT ĐỐI KHÔNG tóm tắt, rút gọn, hay lược bỏ bất kỳ thông tin nào của bản ghi chép. Mọi nội dung, số liệu, tên người, ngày tháng, văn bản (số hiệu, ngày ban hành) được đề cập đều phải xuất hiện ở mục phù hợp.
-- Nội dung thảo luận trong bản ghi chép phải được phân bổ vào đúng mục I và II.
+- Nội dung thảo luận trong bản ghi chép phải được phân bổ vào đúng mục I và II, ghi theo quy tắc GHI Ý KIẾN PHÁT BIỂU ở trên. Các phần mang tính tổng hợp (bảng ở Mục I.3, "Một là, Hai là…" ở Mục I.5, Mục III, Mục IV) được phép viết gọn, nhưng không thay thế cho việc ghi nguyên lời các ý kiến.
 - Nếu thông tin nào không có trong bản ghi chép: ở đoạn mở đầu và các dòng thể thức, để dấu chấm lửng "……" đúng chỗ để người ký điền tay; ở phần nội dung, ghi "[không đề cập]". Riêng các mục a), b), c)… hoàn toàn không được đề cập thì bỏ hẳn mục đó rồi đánh lại chữ cái liên tục từ a).
 - Giữ nguyên tiếng Việt.`;
 
@@ -121,7 +127,9 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
     },
     body: JSON.stringify({
       model: "claude-sonnet-5",
-      max_tokens: 32000,
+      // Verbatim speaker quotes make the report roughly as long as the
+      // transcript itself; Sonnet 5 allows up to 128K output tokens
+      max_tokens: 64000,
       thinking: { type: "disabled" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
@@ -134,6 +142,10 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
   }
 
   const data = (await response.json()) as any;
+  // A cut-off report would silently lose the speakers at the end
+  if (data.stop_reason === "max_tokens") {
+    throw new Error("Claude output hit max_tokens; report would be truncated");
+  }
   const textBlock = data.content?.find((block: any) => block.type === "text");
   if (!textBlock?.text) {
     throw new Error(
@@ -143,20 +155,18 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
   return textBlock.text;
 }
 
-type SpeakerTurn = { speaker?: string; text: string };
-
 /**
- * Split AWS Transcribe output into consecutive speaker turns.
- * Falls back to a single unlabelled turn when speaker data is missing.
+ * Build a speaker-labelled transcript from AWS Transcribe output.
+ * When speaker_labels are present, each line is prefixed with [spk_N].
+ * Falls back to the plain transcript when speaker data is missing.
  */
-function buildSpeakerTurns(transcriptData: any): SpeakerTurn[] {
+function buildSpeakerTranscript(transcriptData: any): string {
   const items: any[] = transcriptData.results?.items ?? [];
   const speakerSegments: any[] =
     transcriptData.results?.speaker_labels?.segments ?? [];
 
   if (speakerSegments.length === 0) {
-    const text = (transcriptData.results?.transcripts?.[0]?.transcript ?? "").trim();
-    return text ? [{ text }] : [];
+    return transcriptData.results?.transcripts?.[0]?.transcript ?? "";
   }
 
   // Map each item's start_time → speaker label
@@ -167,94 +177,31 @@ function buildSpeakerTurns(transcriptData: any): SpeakerTurn[] {
     }
   }
 
-  const turns: SpeakerTurn[] = [];
-  let current: SpeakerTurn | undefined;
+  let result = "";
+  let currentSpeaker = "";
   for (const item of items) {
     const content: string = item.alternatives?.[0]?.content ?? "";
     if (item.type === "punctuation") {
-      if (current) current.text = current.text.trimEnd() + content + " ";
+      result += content;
       continue;
     }
-    const speaker = timeToSpeaker.get(item.start_time) ?? current?.speaker;
-    if (!current || speaker !== current.speaker) {
-      current = { speaker, text: "" };
-      turns.push(current);
+    const speaker = timeToSpeaker.get(item.start_time) ?? currentSpeaker;
+    if (speaker !== currentSpeaker) {
+      if (result && !result.endsWith("\n")) result += "\n";
+      result += `\n[${speaker}]: `;
+      currentSpeaker = speaker;
     }
-    current.text += content + " ";
+    result += content + " ";
   }
-  return turns
-    .map((t) => ({ ...t, text: t.text.trim() }))
-    .filter((t) => t.text);
+  return result.trim();
 }
 
-// What Claude reads: each turn on its own line, prefixed with [spk_N]
-function formatTranscriptForPrompt(turns: SpeakerTurn[]): string {
-  return turns
-    .map((t) => (t.speaker ? `[${t.speaker}]: ${t.text}` : t.text))
-    .join("\n\n");
-}
-
-/**
- * Strips the leading "TIÊU ĐỀ: …" and "NGƯỜI NÓI spk_N: …" lines so
- * parseReport still sees ĐẢNG ỦY… first. Also drops any PHỤ LỤC Claude wrote
- * despite the prompt, since the verbatim appendix is appended in code.
- */
-function splitPreamble(raw: string): {
-  title?: string;
-  speakerNames: Map<string, string>;
-  report: string;
-} {
-  const lines = raw.split(/\r?\n/);
-  const speakerNames = new Map<string, string>();
-  let title: string | undefined;
-  let i = 0;
-  for (; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const titleMatch = line.match(/^TIÊU ĐỀ\s*:\s*(.+)$/i);
-    if (titleMatch) {
-      title = titleMatch[1].trim().slice(0, 150) || undefined;
-      continue;
-    }
-    const speakerMatch = line.match(/^NGƯỜI NÓI\s*\[?(spk_\d+)\]?\s*:\s*(.+)$/i);
-    if (speakerMatch) {
-      speakerNames.set(speakerMatch[1].toLowerCase(), speakerMatch[2].trim());
-      continue;
-    }
-    break;
-  }
-  let body = lines.slice(i);
-  const appendixAt = body.findIndex((l) => /^\s*PHỤ LỤC[\s:]/i.test(l));
-  if (appendixAt !== -1) body = body.slice(0, appendixAt);
-  return { title, speakerNames, report: body.join("\n").trimEnd() };
-}
-
-/**
- * The verbatim record of every opinion, built from the Transcribe output
- * itself rather than retyped by Claude, so nothing gets condensed. Claude only
- * supplies who each spk_N is.
- */
-function buildVerbatimAppendix(
-  turns: SpeakerTurn[],
-  speakerNames: Map<string, string>
-): string {
-  if (!turns.length) return "";
-  // Unnamed spk_N → "Người phát biểu N+1", the same numbering the prompt suggests
-  const nameOf = (spk: string) => {
-    const name = speakerNames.get(spk.toLowerCase());
-    if (name) return name;
-    const n = Number(spk.match(/\d+/)?.[0]);
-    return Number.isFinite(n) ? `Người phát biểu ${n + 1}` : spk;
-  };
-  const paragraphs = turns.map((t) =>
-    t.speaker ? `${nameOf(t.speaker)}: ${t.text}` : t.text
-  );
-  return [
-    "PHỤ LỤC: NGUYÊN VĂN Ý KIẾN PHÁT BIỂU TẠI KỲ SINH HOẠT",
-    "(Ghi nguyên văn theo bản ghi âm tự động, theo đúng thứ tự phát biểu.)",
-    "",
-    paragraphs.join("\n\n"),
-  ].join("\n");
+// Strips the leading "TIÊU ĐỀ: …" line so parseReport still sees ĐẢNG ỦY… first
+function splitTitle(raw: string): { title?: string; report: string } {
+  const match = raw.match(/^\s*TIÊU ĐỀ\s*:\s*(.+)\r?\n/i);
+  if (!match) return { report: raw };
+  const title = match[1].trim().slice(0, 150);
+  return { title: title || undefined, report: raw.slice(match[0].length).replace(/^\s*\n/, "") };
 }
 
 type WorkerEvent = { jobId: string; feedback?: string } | S3Event;
@@ -287,13 +234,11 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
     if (!transcriptRaw) throw new Error("Transcript not found");
 
     const transcriptData = JSON.parse(transcriptRaw);
-    const turns = buildSpeakerTurns(transcriptData);
+    const transcriptText = buildSpeakerTranscript(transcriptData);
 
-    const { title, speakerNames, report } = splitPreamble(
-      await callClaude(formatTranscriptForPrompt(turns), feedback)
+    const { title, report: reportContent } = splitTitle(
+      await callClaude(transcriptText, feedback)
     );
-    const appendix = buildVerbatimAppendix(turns, speakerNames);
-    const reportContent = appendix ? `${report}\n\n${appendix}\n` : report;
 
     await s3Client.send(
       new PutObjectCommand({
