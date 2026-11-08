@@ -14,8 +14,8 @@ import {
 const transcribeClient = new TranscribeClient();
 const s3Client = new S3Client();
 const BUCKET_NAME = process.env.BUCKET_NAME!;
-// Worker timeout is 600s; past this a PROCESSING row is dead, not slow
-const STALE_PROCESSING_MS = 15 * 60 * 1000;
+// Worker timeout is 900s; past this a PROCESSING row is dead, not slow
+const STALE_PROCESSING_MS = 20 * 60 * 1000;
 
 const isStale = (row: MeetingJobRow) =>
   !row.updatedAt || Date.now() - Date.parse(row.updatedAt) > STALE_PROCESSING_MS;

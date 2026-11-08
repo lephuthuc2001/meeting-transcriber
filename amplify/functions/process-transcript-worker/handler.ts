@@ -1,4 +1,4 @@
-import type { S3Event } from "aws-lambda";
+import type { Context, S3Event } from "aws-lambda";
 import {
   S3Client,
   GetObjectCommand,
@@ -112,7 +112,57 @@ QUAN TRỌNG:
 - Nếu thông tin nào không có trong bản ghi chép: ở đoạn mở đầu và các dòng thể thức, để dấu chấm lửng "……" đúng chỗ để người ký điền tay; ở phần nội dung, ghi "[không đề cập]". Riêng các mục a), b), c)… hoàn toàn không được đề cập thì bỏ hẳn mục đó rồi đánh lại chữ cái liên tục từ a).
 - Giữ nguyên tiếng Việt.`;
 
-async function callClaude(transcript: string, feedback?: string): Promise<string> {
+/**
+ * Reads an Anthropic Messages SSE stream into the final text. Streaming keeps
+ * the connection busy during a generation that can run for many minutes.
+ */
+async function readClaudeStream(
+  body: ReadableStream<Uint8Array>
+): Promise<{ text: string; stopReason?: string }> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  let stopReason: string | undefined;
+
+  const handleEvent = (raw: string) => {
+    const data = raw
+      .split("\n")
+      .filter((l) => l.startsWith("data:"))
+      .map((l) => l.slice(5).trimStart())
+      .join("\n");
+    if (!data) return;
+    const event = JSON.parse(data);
+    if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+      text += event.delta.text;
+    } else if (event.type === "message_delta" && event.delta?.stop_reason) {
+      stopReason = event.delta.stop_reason;
+    } else if (event.type === "error") {
+      throw new Error(`Claude API stream error: ${JSON.stringify(event.error)}`);
+    }
+  };
+
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    // stream: true keeps a multibyte Vietnamese character split across chunks intact
+    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+    let sep: number;
+    while ((sep = buffer.indexOf("\n\n")) !== -1) {
+      handleEvent(buffer.slice(0, sep));
+      buffer = buffer.slice(sep + 2);
+    }
+  }
+  buffer += decoder.decode().replace(/\r\n/g, "\n");
+  if (buffer.trim()) handleEvent(buffer);
+  return { text, stopReason };
+}
+
+async function callClaude(
+  transcript: string,
+  feedback: string | undefined,
+  signal: AbortSignal
+): Promise<string> {
   let userMessage = `Đây là bản ghi chép cuộc họp:\n\n${transcript}`;
   if (feedback?.trim()) {
     userMessage += `\n\nNgười dùng có nhận xét sau về bản nháp trước:\n${feedback.trim()}\n\nHãy soạn lại nghị quyết theo nhận xét trên, vẫn dùng đúng định dạng yêu cầu.`;
@@ -128,31 +178,31 @@ async function callClaude(transcript: string, feedback?: string): Promise<string
     body: JSON.stringify({
       model: "claude-sonnet-5",
       // Verbatim speaker quotes make the report roughly as long as the
-      // transcript itself; Sonnet 5 allows up to 128K output tokens
-      max_tokens: 64000,
+      // transcript itself; 128K is Sonnet 5's output maximum. In practice
+      // the worker's 900s timeout is the tighter limit.
+      max_tokens: 128000,
+      stream: true,
       thinking: { type: "disabled" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
+    signal,
   });
 
-  if (!response.ok) {
+  if (!response.ok || !response.body) {
     const err = await response.text();
     throw new Error(`Claude API error ${response.status}: ${err}`);
   }
 
-  const data = (await response.json()) as any;
+  const { text, stopReason } = await readClaudeStream(response.body);
   // A cut-off report would silently lose the speakers at the end
-  if (data.stop_reason === "max_tokens") {
+  if (stopReason === "max_tokens") {
     throw new Error("Claude output hit max_tokens; report would be truncated");
   }
-  const textBlock = data.content?.find((block: any) => block.type === "text");
-  if (!textBlock?.text) {
-    throw new Error(
-      `Claude API returned no text content (stop_reason: ${data.stop_reason})`
-    );
+  if (!text) {
+    throw new Error(`Claude API returned no text content (stop_reason: ${stopReason})`);
   }
-  return textBlock.text;
+  return text;
 }
 
 /**
@@ -219,7 +269,16 @@ async function reportExists(jobId: string): Promise<boolean> {
   }
 }
 
-async function processJob(jobId: string, feedback?: string): Promise<void> {
+// Abort the Claude call this long before the Lambda deadline, so the catch
+// block still has time to mark the row FAILED instead of the invocation being
+// killed with the row left PROCESSING.
+const DEADLINE_MARGIN_MS = 30_000;
+
+async function processJob(
+  jobId: string,
+  feedback: string | undefined,
+  context: Context
+): Promise<void> {
   console.log(`Worker processing jobId: ${jobId}`);
   await setMeetingJobStatus(jobId, "PROCESSING");
 
@@ -237,7 +296,13 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
     const transcriptText = buildSpeakerTranscript(transcriptData);
 
     const { title, report: reportContent } = splitTitle(
-      await callClaude(transcriptText, feedback)
+      await callClaude(
+        transcriptText,
+        feedback,
+        AbortSignal.timeout(
+          Math.max(context.getRemainingTimeInMillis() - DEADLINE_MARGIN_MS, 1_000)
+        )
+      )
     );
 
     await s3Client.send(
@@ -271,9 +336,9 @@ async function processJob(jobId: string, feedback?: string): Promise<void> {
 //   path, so a report is generated even if the browser is gone.
 // - InvokeCommand from process-transcript — manual re-runs, e.g. regenerate
 //   with feedback.
-export const handler = async (event: WorkerEvent) => {
+export const handler = async (event: WorkerEvent, context: Context) => {
   if (!("Records" in event)) {
-    await processJob(event.jobId, event.feedback);
+    await processJob(event.jobId, event.feedback, context);
     return;
   }
 
@@ -288,6 +353,6 @@ export const handler = async (event: WorkerEvent) => {
       console.log(`Report already exists for jobId ${jobId}, skipping`);
       continue;
     }
-    await processJob(jobId);
+    await processJob(jobId, undefined, context);
   }
 };
