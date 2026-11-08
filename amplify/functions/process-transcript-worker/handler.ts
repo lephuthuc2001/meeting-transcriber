@@ -176,13 +176,17 @@ async function callClaude(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-5-5",
       // Verbatim speaker quotes make the report roughly as long as the
-      // transcript itself; 128K is Sonnet 5's output maximum. In practice
+      // transcript itself; 128K is Sonnet 5.5's output maximum. In practice
       // the worker's 900s timeout is the tighter limit.
       max_tokens: 128000,
       stream: true,
-      thinking: { type: "disabled" },
+      // Sonnet 5.5 rejects { type: "disabled" }; between_tools is its
+      // thinking-off setting, valid only at effort "high" or below. "high"
+      // keeps the output thorough, which the verbatim quotes need.
+      thinking: { type: "between_tools" },
+      output_config: { effort: "high" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -195,6 +199,9 @@ async function callClaude(
   }
 
   const { text, stopReason } = await readClaudeStream(response.body);
+  if (stopReason === "refusal") {
+    throw new Error("Claude declined to generate the report (stop_reason: refusal)");
+  }
   // A cut-off report would silently lose the speakers at the end
   if (stopReason === "max_tokens") {
     throw new Error("Claude output hit max_tokens; report would be truncated");
